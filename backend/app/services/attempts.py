@@ -1,5 +1,6 @@
 """Attempt use-cases: load under a row lock, run the engine, persist state and the step log."""
 
+import copy
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -66,8 +67,15 @@ def start_attempt(db: Session, employee_id: str, scenario_id: str, now: datetime
     if scenario is None:
         raise ScenarioError("scenario_not_found", "scenario not found")
 
-    engine = ScenarioEngine(scenario.graph)
-    attempt = Attempt(employee_id=employee_id, scenario_id=scenario.id, current_node="")
+    snapshot = copy.deepcopy(scenario.graph)
+    engine = ScenarioEngine(snapshot)
+    attempt = Attempt(
+        employee_id=employee_id,
+        scenario_id=scenario.id,
+        scenario_version=scenario.version,
+        graph_snapshot=snapshot,
+        current_node="",
+    )
     engine.start(attempt, now)
     db.add(attempt)
     db.commit()
@@ -77,7 +85,7 @@ def start_attempt(db: Session, employee_id: str, scenario_id: str, now: datetime
 def get_attempt(db: Session, attempt_id: str, now: datetime) -> AttemptView:
     """Returns current state; if the timer ran out while the client was away, applies the timeout first."""
     attempt = _lock_attempt(db, attempt_id)
-    engine = ScenarioEngine(attempt.scenario.graph)
+    engine = ScenarioEngine(attempt.graph_snapshot)
     result = engine.expire_if_due(attempt, now)
     if result is None:
         db.rollback()  # release the row lock; nothing changed
@@ -96,7 +104,7 @@ def submit_choice(
     db: Session, attempt_id: str, choice_id: str | None, expected_step: int, now: datetime
 ) -> AttemptView:
     attempt = _lock_attempt(db, attempt_id)
-    engine = ScenarioEngine(attempt.scenario.graph)
+    engine = ScenarioEngine(attempt.graph_snapshot)
     try:
         result = engine.apply_choice(attempt, choice_id, expected_step, now)
     except ScenarioError:

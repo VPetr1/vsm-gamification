@@ -31,6 +31,8 @@ def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
     attempt, engine, log = view.attempt, view.engine, view.last_step
     return AttemptStateOut(
         attempt_id=attempt.id,
+        scenario_id=attempt.scenario_id,
+        scenario_version=attempt.scenario_version,
         loyalty=attempt.loyalty,
         safety=attempt.safety,
         status=attempt.status.value,

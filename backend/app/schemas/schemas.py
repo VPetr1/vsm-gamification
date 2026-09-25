@@ -26,6 +26,8 @@ class LastStepOut(BaseModel):
 
 class AttemptStateOut(BaseModel):
     attempt_id: str
+    scenario_id: str
+    scenario_version: int
     loyalty: int
     safety: int
     status: str

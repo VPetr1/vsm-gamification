@@ -1,3 +1,5 @@
+import json
+
 from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
@@ -75,3 +77,20 @@ def test_upgrade_backfills_steps_for_existing_attempts(tmp_path):
         steps = conn.execute(text("SELECT id, step FROM choice_logs ORDER BY step")).all()
     engine.dispose()
     assert [tuple(r) for r in steps] == [("l1", 1), ("l2", 2)]
+
+
+def test_upgrade_freezes_a_snapshot_for_attempts_already_in_progress(tmp_path):
+    url = f"sqlite:///{tmp_path / 'data.db'}"
+    command.upgrade(alembic_config(url), "0001")
+    _insert_legacy_rows(url)
+
+    upgrade(url)
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT graph_snapshot, scenario_version, flags FROM attempts WHERE id = 'a1'")).one()
+        version = conn.execute(text("SELECT version FROM scenarios WHERE id = 's1'")).scalar()
+    engine.dispose()
+    assert json.loads(row.graph_snapshot) == {"start_node": "n1", "nodes": {}}
+    assert (row.scenario_version, version) == (1, 1)
+    assert json.loads(row.flags) == {}
