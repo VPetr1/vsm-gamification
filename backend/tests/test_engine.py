@@ -105,6 +105,37 @@ def test_unknown_choice_id_raises():
         engine.apply_choice(attempt, "does-not-exist", attempt.node_shown_at + timedelta(seconds=1))
 
 
+def test_choice_hidden_by_condition_cannot_be_submitted_by_id():
+    graph = {
+        "start_node": "n1",
+        "nodes": {
+            "n1": {
+                "text": "x",
+                "timer_seconds": 10,
+                "timeout": {"effects": {}, "next_node": "end"},
+                "choices": [
+                    {"id": "open", "text": "x", "effects": {}, "next_node": "end"},
+                    {
+                        "id": "gated",
+                        "text": "x",
+                        "condition": {"min_safety": 90},
+                        "effects": {"loyalty": 50},
+                        "next_node": "end",
+                    },
+                ],
+            },
+            "end": {"text": "x", "is_ending": True, "ending_summary": "x"},
+        },
+    }
+    attempt = make_attempt(graph)
+    engine = ScenarioEngine(graph)
+
+    with pytest.raises(ValueError):
+        engine.apply_choice(attempt, "gated", attempt.node_shown_at + timedelta(seconds=1))
+    assert attempt.loyalty == 50
+    assert attempt.current_node == "n1"
+
+
 def test_validator_rejects_missing_start_node():
     with pytest.raises(ScenarioValidationError):
         validate_graph({"start_node": "missing", "nodes": {}})

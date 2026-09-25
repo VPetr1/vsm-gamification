@@ -74,7 +74,7 @@ class ScenarioEngine:
             effects = node["timeout"]["effects"]
             next_node_id = node["timeout"]["next_node"]
         else:
-            choice = self._find_choice(node, choice_id)
+            choice = self._find_visible_choice(node, choice_id, attempt)
             effects = choice["effects"]
             next_node_id = choice["next_node"]
 
@@ -100,8 +100,9 @@ class ScenarioEngine:
             safety_delta=safety_delta,
         )
 
-    def _find_choice(self, node: dict, choice_id: str) -> dict:
-        for choice in node["choices"]:
+    def _find_visible_choice(self, node: dict, choice_id: str, attempt: Attempt) -> dict:
+        # Hidden and unknown choices share one error so the response does not leak hidden branches.
+        for choice in visible_choices(node, attempt.loyalty, attempt.safety):
             if choice["id"] == choice_id:
                 return choice
-        raise ValueError(f"choice '{choice_id}' not found in node")
+        raise ValueError(f"choice '{choice_id}' is not available")
