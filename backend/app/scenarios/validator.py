@@ -21,24 +21,22 @@ def validate_graph(graph: dict) -> None:
                 raise ScenarioValidationError(f"ending node '{node_id}' missing ending_summary")
             continue
 
-        if "timer_seconds" not in node:
-            raise ScenarioValidationError(f"node '{node_id}' missing timer_seconds")
-
         if not node.get("choices"):
             raise ScenarioValidationError(f"non-ending node '{node_id}' has no choices")
 
-        timeout = node.get("timeout")
-        if not timeout or "next_node" not in timeout:
-            raise ScenarioValidationError(f"node '{node_id}' missing timeout.next_node")
-        if timeout["next_node"] not in nodes:
-            raise ScenarioValidationError(
-                f"node '{node_id}' timeout.next_node '{timeout['next_node']}' not found"
-            )
+        outcomes = list(node["choices"])
+        if node.get("timer_seconds") is not None:
+            timeout = node.get("timeout")
+            if not timeout:
+                raise ScenarioValidationError(f"node '{node_id}' has a timer but no timeout")
+            outcomes.append(timeout)
 
-        for choice in node["choices"]:
-            if "next_node" not in choice:
-                raise ScenarioValidationError(f"choice in node '{node_id}' missing next_node")
-            if choice["next_node"] not in nodes:
-                raise ScenarioValidationError(
-                    f"node '{node_id}' choice next_node '{choice['next_node']}' not found"
-                )
+        for outcome in outcomes:
+            targets = [outcome["next_node"]] if "next_node" in outcome else [
+                t["next_node"] for t in outcome.get("transitions", [])
+            ]
+            if not targets:
+                raise ScenarioValidationError(f"outcome in node '{node_id}' has no next_node/transitions")
+            for target in targets:
+                if target not in nodes:
+                    raise ScenarioValidationError(f"node '{node_id}' points to missing node '{target}'")

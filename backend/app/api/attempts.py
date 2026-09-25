@@ -19,11 +19,11 @@ from app.services import attempts as service
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 
 
-def _node_out(node_id: str, node: dict, loyalty: int, safety: int) -> NodeOut:
+def _node_out(node_id: str, node: dict, attempt) -> NodeOut:
     # Only ids and texts are exposed: effects, conditions and next nodes stay on the server.
     if node.get("is_ending"):
         return NodeOut(node_id=node_id, text=node["text"], is_ending=True, ending_summary=node["ending_summary"])
-    choices = [ChoiceOut(id=c["id"], text=c["text"]) for c in visible_choices(node, loyalty, safety)]
+    choices = [ChoiceOut(id=c["id"], text=c["text"]) for c in visible_choices(node, attempt)]
     return NodeOut(node_id=node_id, text=node["text"], timer_seconds=node.get("timer_seconds"), choices=choices)
 
 
@@ -35,7 +35,7 @@ def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
         safety=attempt.safety,
         status=attempt.status.value,
         step=attempt.step,
-        node=_node_out(attempt.current_node, engine.current_node(attempt), attempt.loyalty, attempt.safety),
+        node=_node_out(attempt.current_node, engine.current_node(attempt), attempt),
         node_shown_at=as_aware(attempt.node_shown_at),
         deadline=engine.deadline(attempt),
         server_time=now,

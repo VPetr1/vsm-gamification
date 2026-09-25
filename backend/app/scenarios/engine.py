@@ -3,25 +3,19 @@ from datetime import datetime, timedelta
 
 from app.core.clock import as_aware
 from app.models.models import Attempt, AttemptStatus
+from app.scenarios.conditions import evaluate
 from app.scenarios.errors import ScenarioError
+
+DEFAULT_INITIAL = {"loyalty": 50, "safety": 50}
 
 
 def _clamp(value: int) -> int:
     return max(0, min(100, value))
 
 
-def _condition_met(condition: dict | None, loyalty: int, safety: int) -> bool:
-    if not condition:
-        return True
-    if "min_safety" in condition and safety < condition["min_safety"]:
-        return False
-    if "min_loyalty" in condition and loyalty < condition["min_loyalty"]:
-        return False
-    return True
-
-
-def visible_choices(node: dict, loyalty: int, safety: int) -> list[dict]:
-    return [c for c in node["choices"] if _condition_met(c.get("condition"), loyalty, safety)]
+def visible_choices(node: dict, attempt: Attempt) -> list[dict]:
+    """Choices whose condition holds for the state *before* the choice is made."""
+    return [c for c in node["choices"] if evaluate(c.get("condition"), attempt)]
 
 
 @dataclass
@@ -42,6 +36,16 @@ class ScenarioEngine:
 
     The engine is the sole place attempt state is mutated, so scoring rules
     stay in one auditable spot instead of being duplicated per endpoint.
+
+    Order within one step (documented in docs/scenario-format.md):
+      1. attempt must be in progress and expected_step must match;
+      2. deadline reached -> timeout outcome; otherwise the choice must be visible
+         (its condition is checked against the state before the step);
+      3. effects are added and each scale is clamped to 0..100;
+      4. set_flags are applied;
+      5. next node: next_node, or the first transition whose condition holds
+         for the state *after* steps 3-4 (the last transition is the default);
+      6. step += 1, the new node's timer starts; an ending finishes the attempt.
     """
 
     def __init__(self, graph: dict):
@@ -52,11 +56,13 @@ class ScenarioEngine:
         return self.nodes[attempt.current_node]
 
     def start(self, attempt: Attempt, now: datetime) -> Attempt:
+        initial = {**DEFAULT_INITIAL, **self.graph.get("initial", {})}
         attempt.current_node = self.graph["start_node"]
         attempt.step = 0
         attempt.node_shown_at = now
-        attempt.loyalty = 50
-        attempt.safety = 50
+        attempt.loyalty = initial["loyalty"]
+        attempt.safety = initial["safety"]
+        attempt.flags = dict(self.graph.get("flags", {}))
         attempt.status = AttemptStatus.in_progress
         return attempt
 
@@ -104,13 +110,22 @@ class ScenarioEngine:
             return None
         return self._apply_outcome(attempt, self.current_node(attempt)["timeout"], now, choice_id=None, timed_out=True)
 
+    @staticmethod
+    def _next_node(outcome: dict, attempt: Attempt) -> str:
+        if "next_node" in outcome:
+            return outcome["next_node"]
+        for transition in outcome["transitions"]:
+            if evaluate(transition.get("condition"), attempt):
+                return transition["next_node"]
+        raise RuntimeError("no transition matched; the validator requires an unconditional last transition")
+
     def _ensure_in_progress(self, attempt: Attempt) -> None:
         if attempt.status != AttemptStatus.in_progress:
             raise ScenarioError("attempt_finished", "attempt is already finished")
 
     def _find_visible_choice(self, node: dict, choice_id: str, attempt: Attempt) -> dict:
         # Hidden and unknown choices share one error so the response does not leak hidden branches.
-        for choice in visible_choices(node, attempt.loyalty, attempt.safety):
+        for choice in visible_choices(node, attempt):
             if choice["id"] == choice_id:
                 return choice
         raise ScenarioError("choice_not_available", f"choice '{choice_id}' is not available")
@@ -124,7 +139,9 @@ class ScenarioEngine:
 
         attempt.loyalty = _clamp(old_loyalty + effects.get("loyalty", 0))
         attempt.safety = _clamp(old_safety + effects.get("safety", 0))
-        attempt.current_node = outcome["next_node"]
+        # A new dict (not in-place update) so SQLAlchemy notices the JSON column changed.
+        attempt.flags = {**(attempt.flags or {}), **outcome.get("set_flags", {})}
+        attempt.current_node = self._next_node(outcome, attempt)
         attempt.step += 1
         attempt.node_shown_at = now
 

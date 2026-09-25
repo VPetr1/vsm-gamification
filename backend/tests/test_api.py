@@ -145,3 +145,21 @@ def test_choice_on_finished_attempt_returns_409(client, clock):
 
     assert r.status_code == 409
     assert r.json()["detail"]["code"] == "attempt_finished"
+
+
+def test_timerless_node_has_null_deadline_and_rejects_null_choice(client, clock):
+    from tests.test_engine import V2_GRAPH
+
+    employee_id = _create_employee(client)
+    scenario_id = client.post("/scenarios", json={"title": "v2", "graph": V2_GRAPH}).json()["id"]
+    state = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id}).json()
+
+    assert state["deadline"] is None
+    assert state["node"]["timer_seconds"] is None
+    assert (state["loyalty"], state["safety"]) == (60, 80)
+    assert "flags" not in state
+
+    clock.advance(3600)
+    r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": None, "expected_step": 0})
+    assert r.status_code == 422
+    assert r.json()["detail"]["code"] == "choice_required"
