@@ -5,15 +5,20 @@ from sqlalchemy.orm import Session
 
 from app.core.clock import as_aware, current_time
 from app.core.db import get_db
+from app.models.models import Attempt, ChoiceLog
 from app.schemas.schemas import (
+    AttemptResultOut,
     AttemptStateOut,
     ChoiceOut,
+    EndingOut,
     LastStepOut,
     NodeOut,
+    ResultStepOut,
+    ScalesOut,
     StartAttemptIn,
     SubmitChoiceIn,
 )
-from app.scenarios.engine import visible_choices
+from app.scenarios.engine import DEFAULT_INITIAL, visible_choices
 from app.services import attempts as service
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
@@ -65,3 +70,54 @@ def submit_choice(
     now: datetime = Depends(current_time),
 ) -> AttemptStateOut:
     return _state_out(service.submit_choice(db, attempt_id, payload.choice_id, payload.expected_step, now), now)
+
+
+def _result_step(nodes: dict, log: ChoiceLog) -> ResultStepOut:
+    node = nodes[log.node_id]
+    if log.timed_out:
+        outcome, choice_text = node.get("timeout", {}), None
+    else:
+        outcome = next(c for c in node["choices"] if c["id"] == log.choice_id)
+        choice_text = outcome["text"]
+    return ResultStepOut(
+        step=log.step,
+        node_id=log.node_id,
+        situation=node["text"],
+        choice_id=log.choice_id,
+        choice_text=choice_text,
+        timed_out=log.timed_out,
+        loyalty_delta=log.loyalty_delta,
+        safety_delta=log.safety_delta,
+        loyalty_after=log.loyalty_after,
+        safety_after=log.safety_after,
+        explanation=outcome.get("explanation"),
+        lesson=node.get("debrief"),
+    )
+
+
+def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
+    graph = attempt.graph_snapshot
+    ending = graph["nodes"][attempt.current_node]
+    return AttemptResultOut(
+        attempt_id=attempt.id,
+        scenario_id=attempt.scenario_id,
+        scenario_title=attempt.scenario.title,
+        scenario_version=attempt.scenario_version,
+        status=attempt.status.value,
+        started_at=as_aware(attempt.started_at),
+        finished_at=as_aware(attempt.finished_at),
+        initial=ScalesOut(**{**DEFAULT_INITIAL, **graph.get("initial", {})}),
+        final=ScalesOut(loyalty=attempt.loyalty, safety=attempt.safety),
+        ending=EndingOut(
+            node_id=attempt.current_node,
+            text=ending["text"],
+            summary=ending["ending_summary"],
+            outcome=ending.get("outcome"),
+        ),
+        steps=[_result_step(graph["nodes"], log) for log in logs],
+    )
+
+
+@router.get("/{attempt_id}/result", response_model=AttemptResultOut)
+def get_result(attempt_id: str, db: Session = Depends(get_db)) -> AttemptResultOut:
+    return _result_out(*service.finished_attempt_with_logs(db, attempt_id))

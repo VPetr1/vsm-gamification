@@ -59,6 +59,7 @@ class ScenarioEngine:
         initial = {**DEFAULT_INITIAL, **self.graph.get("initial", {})}
         attempt.current_node = self.graph["start_node"]
         attempt.step = 0
+        attempt.started_at = now
         attempt.node_shown_at = now
         attempt.loyalty = initial["loyalty"]
         attempt.safety = initial["safety"]
