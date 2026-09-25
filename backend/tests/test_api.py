@@ -165,3 +165,9 @@ def test_timerless_node_has_null_deadline_and_rejects_null_choice(client, clock)
     r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": None, "expected_step": 0})
     assert r.status_code == 422
     assert r.json()["detail"]["code"] == "choice_required"
+
+
+def test_employee_field_lengths_are_validated(client):
+    assert client.post("/employees", json={"full_name": "x" * 201}).status_code == 422
+    assert client.post("/employees", json={"full_name": ""}).status_code == 422
+    assert client.post("/employees", json={"full_name": "x" * 200}).status_code == 201

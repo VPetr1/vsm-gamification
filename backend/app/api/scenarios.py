@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
 
 class ScenarioIn(BaseModel):
-    title: str
+    title: str = Field(min_length=1, max_length=300)
     description: str = ""
     graph: dict
 
