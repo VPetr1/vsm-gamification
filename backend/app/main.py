@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import attempts, employees, scenarios
+from app.api import attempts, employees, errors, scenarios
 
 app = FastAPI(title="ВСМ Геймификация — Backend", version="0.1.0")
 
@@ -11,6 +11,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+errors.install(app)
 
 app.include_router(employees.router)
 app.include_router(scenarios.router)

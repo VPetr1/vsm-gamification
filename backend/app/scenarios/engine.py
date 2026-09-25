@@ -1,18 +1,13 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 
+from app.core.clock import as_aware
 from app.models.models import Attempt, AttemptStatus
+from app.scenarios.errors import ScenarioError
 
 
 def _clamp(value: int) -> int:
     return max(0, min(100, value))
-
-
-def _as_aware(dt: datetime) -> datetime:
-    """SQLite drops tzinfo on round-trip; Postgres keeps it. Normalize to UTC-aware."""
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
 
 
 def _condition_met(condition: dict | None, loyalty: int, safety: int) -> bool:
@@ -31,9 +26,8 @@ def visible_choices(node: dict, loyalty: int, safety: int) -> list[dict]:
 
 @dataclass
 class StepResult:
-    attempt: Attempt
     prev_node_id: str
-    node: dict
+    choice_id: str | None
     timed_out: bool
     loyalty_delta: int
     safety_delta: int
@@ -53,56 +47,85 @@ class ScenarioEngine:
     def current_node(self, attempt: Attempt) -> dict:
         return self.nodes[attempt.current_node]
 
-    def start(self, attempt: Attempt) -> Attempt:
+    def start(self, attempt: Attempt, now: datetime) -> Attempt:
         attempt.current_node = self.graph["start_node"]
-        attempt.node_shown_at = datetime.now(timezone.utc)
+        attempt.node_shown_at = now
         attempt.loyalty = 50
         attempt.safety = 50
         attempt.status = AttemptStatus.in_progress
         return attempt
 
-    def apply_choice(self, attempt: Attempt, choice_id: str | None, now: datetime) -> StepResult:
+    def deadline(self, attempt: Attempt) -> datetime | None:
         if attempt.status != AttemptStatus.in_progress:
-            raise ValueError("attempt is already finished")
+            return None
+        timer = self.current_node(attempt).get("timer_seconds")
+        if timer is None:
+            return None
+        return as_aware(attempt.node_shown_at) + timedelta(seconds=timer)
 
-        prev_node_id = attempt.current_node
+    def is_expired(self, attempt: Attempt, now: datetime) -> bool:
+        deadline = self.deadline(attempt)
+        return deadline is not None and as_aware(now) >= deadline
+
+    def apply_choice(self, attempt: Attempt, choice_id: str | None, now: datetime) -> StepResult:
+        """A choice made at or after the deadline is ignored and the timeout branch applies."""
+        self._ensure_in_progress(attempt)
         node = self.current_node(attempt)
-        elapsed = (_as_aware(now) - _as_aware(attempt.node_shown_at)).total_seconds()
-        timed_out = choice_id is None or elapsed > node["timer_seconds"]
 
-        if timed_out:
-            effects = node["timeout"]["effects"]
-            next_node_id = node["timeout"]["next_node"]
-        else:
-            choice = self._find_visible_choice(node, choice_id, attempt)
-            effects = choice["effects"]
-            next_node_id = choice["next_node"]
+        if self.is_expired(attempt, now):
+            return self._apply_outcome(attempt, node["timeout"], now, choice_id=None, timed_out=True)
 
-        loyalty_delta = effects.get("loyalty", 0)
-        safety_delta = effects.get("safety", 0)
-        attempt.loyalty = _clamp(attempt.loyalty + loyalty_delta)
-        attempt.safety = _clamp(attempt.safety + safety_delta)
-        attempt.current_node = next_node_id
-        attempt.node_shown_at = now
+        if choice_id is None:
+            if node.get("timer_seconds") is None:
+                raise ScenarioError("choice_required", "this step has no timer; a choice_id is required")
+            raise ScenarioError(
+                "timer_not_expired",
+                "timeout requested before the deadline",
+                deadline=self.deadline(attempt).isoformat(),
+            )
 
-        next_node = self.nodes[next_node_id]
-        if next_node.get("is_ending"):
-            attempt.status = AttemptStatus.finished
-            attempt.ending_summary = next_node["ending_summary"]
-            attempt.finished_at = now
+        choice = self._find_visible_choice(node, choice_id, attempt)
+        return self._apply_outcome(attempt, choice, now, choice_id=choice["id"], timed_out=False)
 
-        return StepResult(
-            attempt=attempt,
-            prev_node_id=prev_node_id,
-            node=next_node,
-            timed_out=timed_out,
-            loyalty_delta=loyalty_delta,
-            safety_delta=safety_delta,
-        )
+    def expire_if_due(self, attempt: Attempt, now: datetime) -> StepResult | None:
+        """Apply the timeout branch for an attempt whose deadline passed while nobody was answering."""
+        if not self.is_expired(attempt, now):
+            return None
+        return self._apply_outcome(attempt, self.current_node(attempt)["timeout"], now, choice_id=None, timed_out=True)
+
+    def _ensure_in_progress(self, attempt: Attempt) -> None:
+        if attempt.status != AttemptStatus.in_progress:
+            raise ScenarioError("attempt_finished", "attempt is already finished")
 
     def _find_visible_choice(self, node: dict, choice_id: str, attempt: Attempt) -> dict:
         # Hidden and unknown choices share one error so the response does not leak hidden branches.
         for choice in visible_choices(node, attempt.loyalty, attempt.safety):
             if choice["id"] == choice_id:
                 return choice
-        raise ValueError(f"choice '{choice_id}' is not available")
+        raise ScenarioError("choice_not_available", f"choice '{choice_id}' is not available")
+
+    def _apply_outcome(
+        self, attempt: Attempt, outcome: dict, now: datetime, choice_id: str | None, timed_out: bool
+    ) -> StepResult:
+        prev_node_id = attempt.current_node
+        effects = outcome.get("effects", {})
+        old_loyalty, old_safety = attempt.loyalty, attempt.safety
+
+        attempt.loyalty = _clamp(old_loyalty + effects.get("loyalty", 0))
+        attempt.safety = _clamp(old_safety + effects.get("safety", 0))
+        attempt.current_node = outcome["next_node"]
+        attempt.node_shown_at = now
+
+        next_node = self.nodes[attempt.current_node]
+        if next_node.get("is_ending"):
+            attempt.status = AttemptStatus.finished
+            attempt.ending_summary = next_node["ending_summary"]
+            attempt.finished_at = now
+
+        return StepResult(
+            prev_node_id=prev_node_id,
+            choice_id=choice_id,
+            timed_out=timed_out,
+            loyalty_delta=attempt.loyalty - old_loyalty,
+            safety_delta=attempt.safety - old_safety,
+        )
