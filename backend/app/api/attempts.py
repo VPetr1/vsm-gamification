@@ -32,6 +32,17 @@ def _node_out(node_id: str, node: dict, attempt) -> NodeOut:
     return NodeOut(node_id=node_id, text=node["text"], timer_seconds=node.get("timer_seconds"), choices=choices)
 
 
+def _last_step_out(log: ChoiceLog) -> LastStepOut:
+    return LastStepOut(
+        step=log.step,
+        node_id=log.node_id,
+        choice_id=log.choice_id,
+        timed_out=log.timed_out,
+        loyalty_delta=log.loyalty_delta,
+        safety_delta=log.safety_delta,
+    )
+
+
 def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
     attempt, engine, log = view.attempt, view.engine, view.last_step
     return AttemptStateOut(
@@ -46,7 +57,7 @@ def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
         node_shown_at=as_utc(attempt.node_shown_at),
         deadline=engine.deadline(attempt),
         server_time=now,
-        last_step=None if log is None else LastStepOut(step=log.step, node_id=log.node_id, choice_id=log.choice_id, timed_out=log.timed_out),
+        last_step=None if log is None else _last_step_out(log),
     )
 
 

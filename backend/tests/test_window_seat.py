@@ -134,7 +134,14 @@ def test_restoring_an_expired_suitcase_step(client, clock, play):
 
     assert restored["node"]["node_id"] == "trip"
     assert restored["step"] == 2
-    assert restored["last_step"] == {"step": 2, "node_id": "suitcase", "choice_id": None, "timed_out": True}
+    assert restored["last_step"] == {
+        "step": 2,
+        "node_id": "suitcase",
+        "choice_id": None,
+        "timed_out": True,
+        "loyalty_delta": -5,
+        "safety_delta": -20,
+    }
 
 
 def test_double_submit_in_the_middle_of_the_scenario(client, play, session_factory):
