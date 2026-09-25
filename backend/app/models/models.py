@@ -44,6 +44,7 @@ class Scenario(Base):
     title: Mapped[str] = mapped_column(String(300))
     description: Mapped[str] = mapped_column(Text, default="")
     graph: Mapped[dict] = mapped_column(JSON)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="scenario")
@@ -60,6 +61,9 @@ class Attempt(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"))
     scenario_id: Mapped[str] = mapped_column(ForeignKey("scenarios.id"))
+    # Frozen copy of the graph at start: later edits to the scenario never affect this attempt.
+    scenario_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    graph_snapshot: Mapped[dict] = mapped_column(JSON)
 
     current_node: Mapped[str] = mapped_column(String(100))
     step: Mapped[int] = mapped_column(Integer, default=0, server_default="0")

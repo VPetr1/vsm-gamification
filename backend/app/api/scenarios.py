@@ -19,6 +19,7 @@ class ScenarioOut(BaseModel):
     id: str
     title: str
     description: str
+    version: int
 
     model_config = {"from_attributes": True}
 
