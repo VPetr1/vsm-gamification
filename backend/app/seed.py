@@ -1,16 +1,15 @@
 """Populate the database with one demo employee and the demo scenario.
 
-Run with: python -m app.seed
+Run after migrations: python -m app.db_upgrade && python -m app.seed
 """
 
-from app.core.db import Base, SessionLocal, engine
+from app.core.db import SessionLocal
 from app.models.models import Employee, Scenario
 from app.scenarios.demo_scenario import DEMO_SCENARIO
 from app.scenarios.validator import validate_graph
 
 
 def run() -> None:
-    Base.metadata.create_all(bind=engine)
     validate_graph(DEMO_SCENARIO["graph"])
 
     db = SessionLocal()
