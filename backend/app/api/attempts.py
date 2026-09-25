@@ -3,7 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.clock import as_aware, current_time
+from app.core.clock import as_utc, current_time
 from app.core.db import get_db
 from app.models.models import Attempt, ChoiceLog
 from app.schemas.schemas import (
@@ -43,7 +43,7 @@ def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
         status=attempt.status.value,
         step=attempt.step,
         node=_node_out(attempt.current_node, engine.current_node(attempt), attempt),
-        node_shown_at=as_aware(attempt.node_shown_at),
+        node_shown_at=as_utc(attempt.node_shown_at),
         deadline=engine.deadline(attempt),
         server_time=now,
         last_step=None if log is None else LastStepOut(step=log.step, node_id=log.node_id, choice_id=log.choice_id, timed_out=log.timed_out),
@@ -104,8 +104,8 @@ def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
         scenario_title=attempt.scenario.title,
         scenario_version=attempt.scenario_version,
         status=attempt.status.value,
-        started_at=as_aware(attempt.started_at),
-        finished_at=as_aware(attempt.finished_at),
+        started_at=as_utc(attempt.started_at),
+        finished_at=as_utc(attempt.finished_at),
         initial=ScalesOut(**{**DEFAULT_INITIAL, **graph.get("initial", {})}),
         final=ScalesOut(loyalty=attempt.loyalty, safety=attempt.safety),
         ending=EndingOut(
