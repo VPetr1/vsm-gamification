@@ -99,7 +99,14 @@ def test_timeout_request_at_deadline_applies_timeout(client, clock):
 
     assert r.status_code == 200
     body = r.json()
-    assert body["last_step"] == {"step": 1, "node_id": "n1", "choice_id": None, "timed_out": True}
+    assert body["last_step"] == {
+        "step": 1,
+        "node_id": "n1",
+        "choice_id": None,
+        "timed_out": True,
+        "loyalty_delta": -10,
+        "safety_delta": -5,
+    }
     assert body["step"] == 1
     assert body["node"]["node_id"] == "n2_escalation"
     assert (body["loyalty"], body["safety"]) == (40, 45)

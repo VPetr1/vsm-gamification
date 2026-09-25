@@ -18,10 +18,14 @@ class NodeOut(BaseModel):
 
 
 class LastStepOut(BaseModel):
+    """The step just applied; its deltas are consequences of a decision already made."""
+
     step: int
     node_id: str
     choice_id: str | None
     timed_out: bool
+    loyalty_delta: int
+    safety_delta: int
 
 
 class AttemptStateOut(BaseModel):
