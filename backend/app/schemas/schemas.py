@@ -17,6 +17,12 @@ class NodeOut(BaseModel):
     ending_summary: str | None = None
 
 
+class LastStepOut(BaseModel):
+    node_id: str
+    choice_id: str | None
+    timed_out: bool
+
+
 class AttemptStateOut(BaseModel):
     attempt_id: str
     loyalty: int
@@ -24,8 +30,9 @@ class AttemptStateOut(BaseModel):
     status: str
     node: NodeOut
     node_shown_at: datetime
-
-    model_config = {"from_attributes": True}
+    deadline: datetime | None
+    server_time: datetime
+    last_step: LastStepOut | None = None
 
 
 class StartAttemptIn(BaseModel):
