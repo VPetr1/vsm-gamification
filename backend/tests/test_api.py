@@ -178,3 +178,8 @@ def test_employee_field_lengths_are_validated(client):
     assert client.post("/employees", json={"full_name": "x" * 201}).status_code == 422
     assert client.post("/employees", json={"full_name": ""}).status_code == 422
     assert client.post("/employees", json={"full_name": "x" * 200}).status_code == 201
+
+
+def test_state_includes_scenario_title(client, clock):
+    state = _start(client)
+    assert state["scenario_title"] == DEMO_SCENARIO["title"]
