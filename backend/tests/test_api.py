@@ -1,4 +1,6 @@
-from app.scenarios.demo_scenario import DEMO_SCENARIO
+from app.scenarios.library import load_scenario
+
+DEMO_SCENARIO = load_scenario("seat_recline")
 
 
 def _create_employee(client):

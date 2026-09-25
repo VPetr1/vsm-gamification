@@ -3,9 +3,11 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.models.models import Attempt, AttemptStatus
-from app.scenarios.demo_scenario import DEMO_SCENARIO
+from app.scenarios.library import load_scenario
 from app.scenarios.engine import ScenarioEngine, visible_choices
 from app.scenarios.errors import ScenarioError
+
+DEMO_SCENARIO = load_scenario("seat_recline")
 
 
 T0 = datetime(2026, 9, 25, 12, 0, 0, tzinfo=timezone.utc)

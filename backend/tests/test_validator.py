@@ -2,9 +2,11 @@ import copy
 
 import pytest
 
-from app.scenarios.demo_scenario import DEMO_SCENARIO
+from app.scenarios.library import load_scenario
 from app.scenarios.validator import ScenarioValidationError, collect_errors, validate_graph
 from tests.test_engine import V2_GRAPH
+
+DEMO_SCENARIO = load_scenario("seat_recline")
 
 
 def graph(**patch):

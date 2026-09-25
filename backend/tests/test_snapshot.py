@@ -3,7 +3,9 @@
 import copy
 
 from app.models.models import Scenario
-from app.scenarios.demo_scenario import DEMO_SCENARIO
+from app.scenarios.library import load_scenario
+
+DEMO_SCENARIO = load_scenario("seat_recline")
 
 
 def test_started_attempt_keeps_its_snapshot_after_the_scenario_is_edited(client, session_factory):
