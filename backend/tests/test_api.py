@@ -32,7 +32,7 @@ def test_full_scenario_playthrough_to_saved_result(client):
     assert state["status"] == "in_progress"
     assert {c["id"] for c in state["node"]["choices"]} == {"c1", "c2", "c3"}
 
-    r = client.post(f"/attempts/{attempt_id}/choice", json={"choice_id": "c1"})
+    r = client.post(f"/attempts/{attempt_id}/choice", json={"choice_id": "c1", "expected_step": 0})
     assert r.status_code == 200
     final_state = r.json()
     assert final_state["status"] == "finished"
@@ -57,7 +57,7 @@ def test_start_attempt_with_unknown_employee_returns_404(client):
 
 
 def test_choice_on_unknown_attempt_returns_404(client):
-    r = client.post("/attempts/does-not-exist/choice", json={"choice_id": "c1"})
+    r = client.post("/attempts/does-not-exist/choice", json={"choice_id": "c1", "expected_step": 0})
     assert r.status_code == 404
 
 
@@ -80,7 +80,7 @@ def test_timeout_request_before_deadline_returns_409_and_keeps_state(client, clo
     state = _start(client)
     clock.advance(10)
 
-    r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": None})
+    r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": None, "expected_step": 0})
 
     assert r.status_code == 409
     assert r.json()["detail"]["code"] == "timer_not_expired"
@@ -93,11 +93,12 @@ def test_timeout_request_at_deadline_applies_timeout(client, clock):
     state = _start(client)
     clock.advance(20)
 
-    r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": None})
+    r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": None, "expected_step": 0})
 
     assert r.status_code == 200
     body = r.json()
-    assert body["last_step"] == {"node_id": "n1", "choice_id": None, "timed_out": True}
+    assert body["last_step"] == {"step": 1, "node_id": "n1", "choice_id": None, "timed_out": True}
+    assert body["step"] == 1
     assert body["node"]["node_id"] == "n2_escalation"
     assert (body["loyalty"], body["safety"]) == (40, 45)
 
@@ -106,7 +107,7 @@ def test_late_choice_is_converted_to_timeout(client, clock):
     state = _start(client)
     clock.advance(21)
 
-    body = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": "c1"}).json()
+    body = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": "c1", "expected_step": 0}).json()
 
     assert body["last_step"]["timed_out"] is True
     assert body["node"]["node_id"] == "n2_escalation"
@@ -138,9 +139,9 @@ def test_restoring_before_deadline_changes_nothing(client, clock):
 
 def test_choice_on_finished_attempt_returns_409(client, clock):
     state = _start(client)
-    client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": "c1"})
+    client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": "c1", "expected_step": 0})
 
-    r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": "c1"})
+    r = client.post(f"/attempts/{state['attempt_id']}/choice", json={"choice_id": "c1", "expected_step": 0})
 
     assert r.status_code == 409
     assert r.json()["detail"]["code"] == "attempt_finished"

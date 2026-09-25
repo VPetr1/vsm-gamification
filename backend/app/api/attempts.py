@@ -34,11 +34,12 @@ def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
         loyalty=attempt.loyalty,
         safety=attempt.safety,
         status=attempt.status.value,
+        step=attempt.step,
         node=_node_out(attempt.current_node, engine.current_node(attempt), attempt.loyalty, attempt.safety),
         node_shown_at=as_aware(attempt.node_shown_at),
         deadline=engine.deadline(attempt),
         server_time=now,
-        last_step=None if log is None else LastStepOut(node_id=log.node_id, choice_id=log.choice_id, timed_out=log.timed_out),
+        last_step=None if log is None else LastStepOut(step=log.step, node_id=log.node_id, choice_id=log.choice_id, timed_out=log.timed_out),
     )
 
 
@@ -61,4 +62,4 @@ def submit_choice(
     db: Session = Depends(get_db),
     now: datetime = Depends(current_time),
 ) -> AttemptStateOut:
-    return _state_out(service.submit_choice(db, attempt_id, payload.choice_id, now), now)
+    return _state_out(service.submit_choice(db, attempt_id, payload.choice_id, payload.expected_step, now), now)
