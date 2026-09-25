@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -9,9 +9,10 @@ router = APIRouter(prefix="/employees", tags=["employees"])
 
 
 class EmployeeIn(BaseModel):
-    full_name: str
-    depot: str = ""
-    brigade: str = ""
+    # Limits mirror the String(200) columns, so overlong input is a 422 instead of a DB error.
+    full_name: str = Field(min_length=1, max_length=200)
+    depot: str = Field(default="", max_length=200)
+    brigade: str = Field(default="", max_length=200)
 
 
 class EmployeeOut(BaseModel):
