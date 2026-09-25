@@ -5,11 +5,11 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def as_aware(dt: datetime) -> datetime:
-    """SQLite drops tzinfo on round-trip; Postgres keeps it. Treat naive values as UTC."""
+def as_utc(dt: datetime) -> datetime:
+    """Normalise DB timestamps to UTC: SQLite returns naive values, Postgres the session's zone."""
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
-    return dt
+    return dt.astimezone(timezone.utc)
 
 
 def current_time() -> datetime:

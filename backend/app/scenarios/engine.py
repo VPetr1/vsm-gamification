@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from app.core.clock import as_aware
+from app.core.clock import as_utc
 from app.models.models import Attempt, AttemptStatus
 from app.scenarios.conditions import evaluate
 from app.scenarios.errors import ScenarioError
@@ -73,11 +73,11 @@ class ScenarioEngine:
         timer = self.current_node(attempt).get("timer_seconds")
         if timer is None:
             return None
-        return as_aware(attempt.node_shown_at) + timedelta(seconds=timer)
+        return as_utc(attempt.node_shown_at) + timedelta(seconds=timer)
 
     def is_expired(self, attempt: Attempt, now: datetime) -> bool:
         deadline = self.deadline(attempt)
-        return deadline is not None and as_aware(now) >= deadline
+        return deadline is not None and as_utc(now) >= deadline
 
     def apply_choice(self, attempt: Attempt, choice_id: str | None, expected_step: int, now: datetime) -> StepResult:
         """A choice made at or after the deadline is ignored and the timeout branch applies."""
