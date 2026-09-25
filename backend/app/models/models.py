@@ -65,6 +65,7 @@ class Attempt(Base):
     step: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     loyalty: Mapped[int] = mapped_column(Integer, default=50)
     safety: Mapped[int] = mapped_column(Integer, default=50)
+    flags: Mapped[dict] = mapped_column(JSON, default=dict)
     status: Mapped[AttemptStatus] = mapped_column(
         Enum(AttemptStatus, name="attempt_status"), default=AttemptStatus.in_progress
     )

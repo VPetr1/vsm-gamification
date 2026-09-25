@@ -4,7 +4,7 @@ import pytest
 
 from app.models.models import Attempt, AttemptStatus
 from app.scenarios.demo_scenario import DEMO_SCENARIO
-from app.scenarios.engine import ScenarioEngine
+from app.scenarios.engine import ScenarioEngine, visible_choices
 from app.scenarios.errors import ScenarioError
 from app.scenarios.validator import ScenarioValidationError, validate_graph
 
@@ -249,3 +249,97 @@ def test_steps_increment_and_stale_expected_step_is_rejected():
     assert result.step == attempt.step == 1
     assert (result.prev_node_id, result.next_node) == ("n1", "n2_resolved")
     assert (result.loyalty_after, result.safety_after) == (60, 55)
+
+
+V2_GRAPH = {
+    "initial": {"loyalty": 60, "safety": 80},
+    "flags": {"was_rude": False},
+    "start_node": "talk",
+    "nodes": {
+        "talk": {
+            "text": "no timer here",
+            "choices": [
+                {"id": "polite", "text": "x", "effects": {"loyalty": 5}, "next_node": "decide"},
+                {"id": "rude", "text": "x", "effects": {"loyalty": -5}, "set_flags": {"was_rude": True}, "next_node": "decide"},
+            ],
+        },
+        "decide": {
+            "text": "x",
+            "choices": [
+                {
+                    "id": "go",
+                    "text": "x",
+                    "effects": {"loyalty": 5},
+                    "transitions": [
+                        {"condition": {"flag": "was_rude"}, "next_node": "bad"},
+                        {"condition": {"scale": "loyalty", "op": ">=", "value": 70}, "next_node": "good"},
+                        {"next_node": "meh"},
+                    ],
+                },
+                {
+                    "id": "secret",
+                    "text": "x",
+                    "condition": {"not": {"flag": "was_rude"}},
+                    "effects": {"loyalty": 20},
+                    "next_node": "good",
+                },
+            ],
+        },
+        "good": {"text": "x", "is_ending": True, "ending_summary": "good"},
+        "meh": {"text": "x", "is_ending": True, "ending_summary": "meh"},
+        "bad": {"text": "x", "is_ending": True, "ending_summary": "bad"},
+    },
+}
+
+
+def _play(graph, *choice_ids):
+    engine = ScenarioEngine(graph)
+    attempt = make_attempt(graph)
+    for choice_id in choice_ids:
+        engine.apply_choice(attempt, choice_id, attempt.step, T0 + timedelta(seconds=1))
+    return attempt
+
+
+def test_initial_scales_and_flags_come_from_the_scenario():
+    attempt = make_attempt(V2_GRAPH)
+    assert (attempt.loyalty, attempt.safety, attempt.flags) == (60, 80, {"was_rude": False})
+
+
+def test_old_graph_without_initial_starts_at_50_50_with_no_flags():
+    attempt = make_attempt(DEMO_SCENARIO["graph"])
+    assert (attempt.loyalty, attempt.safety, attempt.flags) == (50, 50, {})
+
+
+def test_action_sets_flag_and_flag_routes_transition():
+    attempt = _play(V2_GRAPH, "rude", "go")
+    assert attempt.flags == {"was_rude": True}
+    assert attempt.current_node == "bad"
+
+
+def test_transition_threshold_is_checked_after_the_choice_effects():
+    # polite: 60+5=65; go: 65+5=70 -> the ">= 70" branch only matches after go's own effect.
+    assert _play(V2_GRAPH, "polite", "go").current_node == "good"
+
+
+def test_default_transition_when_no_condition_matches():
+    graph = {**V2_GRAPH, "initial": {"loyalty": 50, "safety": 80}}
+    assert _play(graph, "polite", "go").current_node == "meh"
+
+
+def test_previous_action_hides_a_later_choice():
+    engine = ScenarioEngine(V2_GRAPH)
+    attempt = _play(V2_GRAPH, "rude")
+    assert [c["id"] for c in visible_choices(V2_GRAPH["nodes"]["decide"], attempt)] == ["go"]
+    with pytest.raises(ScenarioError) as exc:
+        engine.apply_choice(attempt, "secret", attempt.step, T0 + timedelta(seconds=2))
+    assert exc.value.code == "choice_not_available"
+
+
+def test_node_without_timer_has_no_deadline_and_requires_a_choice():
+    engine = ScenarioEngine(V2_GRAPH)
+    attempt = make_attempt(V2_GRAPH)
+    assert engine.deadline(attempt) is None
+    assert engine.expire_if_due(attempt, T0 + timedelta(days=1)) is None
+    with pytest.raises(ScenarioError) as exc:
+        engine.apply_choice(attempt, None, 0, T0 + timedelta(days=1))
+    assert exc.value.code == "choice_required"
