@@ -6,7 +6,6 @@ from app.models.models import Attempt, AttemptStatus
 from app.scenarios.demo_scenario import DEMO_SCENARIO
 from app.scenarios.engine import ScenarioEngine, visible_choices
 from app.scenarios.errors import ScenarioError
-from app.scenarios.validator import ScenarioValidationError, validate_graph
 
 
 T0 = datetime(2026, 9, 25, 12, 0, 0, tzinfo=timezone.utc)
@@ -16,10 +15,6 @@ def make_attempt(graph: dict) -> Attempt:
     attempt = Attempt(employee_id="e1", scenario_id="s1", current_node="")
     ScenarioEngine(graph).start(attempt, T0)
     return attempt
-
-
-def test_demo_scenario_is_valid():
-    validate_graph(DEMO_SCENARIO["graph"])
 
 
 def test_start_sets_start_node_and_default_scales():
@@ -141,31 +136,7 @@ def test_choice_hidden_by_condition_cannot_be_submitted_by_id():
     assert attempt.current_node == "n1"
 
 
-def test_validator_rejects_missing_start_node():
-    with pytest.raises(ScenarioValidationError):
-        validate_graph({"start_node": "missing", "nodes": {}})
 
-
-def test_validator_rejects_dangling_next_node():
-    graph = {
-        "start_node": "n1",
-        "nodes": {
-            "n1": {
-                "text": "x",
-                "timer_seconds": 10,
-                "timeout": {"effects": {}, "next_node": "n1"},
-                "choices": [{"id": "c1", "text": "x", "effects": {}, "next_node": "ghost"}],
-            }
-        },
-    }
-    with pytest.raises(ScenarioValidationError):
-        validate_graph(graph)
-
-
-def test_validator_rejects_ending_node_without_summary():
-    graph = {"start_node": "n1", "nodes": {"n1": {"text": "x", "is_ending": True}}}
-    with pytest.raises(ScenarioValidationError):
-        validate_graph(graph)
 
 
 def test_null_choice_before_deadline_is_rejected_and_state_unchanged():

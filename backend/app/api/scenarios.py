@@ -28,7 +28,14 @@ def create_scenario(payload: ScenarioIn, db: Session = Depends(get_db)) -> Scena
     try:
         validate_graph(payload.graph)
     except ScenarioValidationError as exc:
-        raise HTTPException(422, str(exc)) from exc
+        raise HTTPException(
+            422,
+            detail={
+                "code": "invalid_scenario",
+                "message": f"scenario graph has {len(exc.errors)} problem(s)",
+                "errors": exc.errors,
+            },
+        ) from exc
 
     scenario = Scenario(title=payload.title, description=payload.description, graph=payload.graph)
     db.add(scenario)
