@@ -10,6 +10,7 @@ STATUS_BY_CODE = {
     "attempt_finished": 409,
     "timer_not_expired": 409,
     "step_mismatch": 409,
+    "attempt_not_finished": 409,
     "choice_not_available": 422,
     "choice_required": 422,
 }

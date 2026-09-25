@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.models import Attempt, ChoiceLog, Employee, Scenario
+from app.models.models import Attempt, AttemptStatus, ChoiceLog, Employee, Scenario
 from app.scenarios.engine import ScenarioEngine, StepResult
 from app.scenarios.errors import ScenarioError
 
@@ -113,3 +113,14 @@ def submit_choice(
     log = _record(db, attempt, result)
     _commit_step(db)
     return AttemptView(attempt, engine, log)
+
+
+def finished_attempt_with_logs(db: Session, attempt_id: str) -> tuple[Attempt, list[ChoiceLog]]:
+    """The debrief is only available after the end, so it never reveals effects of pending choices."""
+    attempt = db.get(Attempt, attempt_id)
+    if attempt is None:
+        raise ScenarioError("attempt_not_found", "attempt not found")
+    if attempt.status != AttemptStatus.finished:
+        raise ScenarioError("attempt_not_finished", "the result is available after the attempt is finished")
+    logs = db.execute(select(ChoiceLog).where(ChoiceLog.attempt_id == attempt_id).order_by(ChoiceLog.step)).scalars()
+    return attempt, list(logs)
