@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.models import Attempt, ChoiceLog, Employee, Scenario
@@ -28,21 +29,34 @@ def _lock_attempt(db: Session, attempt_id: str) -> Attempt:
 
 def _last_log(db: Session, attempt_id: str) -> ChoiceLog | None:
     return db.execute(
-        select(ChoiceLog).where(ChoiceLog.attempt_id == attempt_id).order_by(ChoiceLog.created_at.desc()).limit(1)
+        select(ChoiceLog).where(ChoiceLog.attempt_id == attempt_id).order_by(ChoiceLog.step.desc()).limit(1)
     ).scalar_one_or_none()
 
 
 def _record(db: Session, attempt: Attempt, result: StepResult) -> ChoiceLog:
     log = ChoiceLog(
         attempt_id=attempt.id,
+        step=result.step,
         node_id=result.prev_node_id,
         choice_id=result.choice_id,
         timed_out=result.timed_out,
+        next_node=result.next_node,
         loyalty_delta=result.loyalty_delta,
         safety_delta=result.safety_delta,
+        loyalty_after=result.loyalty_after,
+        safety_after=result.safety_after,
     )
     db.add(log)
     return log
+
+
+def _commit_step(db: Session) -> None:
+    """Commit state + log atomically; a duplicate (attempt_id, step) means another request won the race."""
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise ScenarioError("step_mismatch", "this step was already applied by another request") from exc
 
 
 def start_attempt(db: Session, employee_id: str, scenario_id: str, now: datetime) -> AttemptView:
@@ -69,18 +83,25 @@ def get_attempt(db: Session, attempt_id: str, now: datetime) -> AttemptView:
         db.rollback()  # release the row lock; nothing changed
         return AttemptView(attempt, engine, _last_log(db, attempt_id))
     log = _record(db, attempt, result)
-    db.commit()
+    try:
+        _commit_step(db)
+    except ScenarioError:
+        # A concurrent request resolved the same timeout first; show what it produced.
+        attempt = db.get(Attempt, attempt_id)
+        return AttemptView(attempt, engine, _last_log(db, attempt_id))
     return AttemptView(attempt, engine, log)
 
 
-def submit_choice(db: Session, attempt_id: str, choice_id: str | None, now: datetime) -> AttemptView:
+def submit_choice(
+    db: Session, attempt_id: str, choice_id: str | None, expected_step: int, now: datetime
+) -> AttemptView:
     attempt = _lock_attempt(db, attempt_id)
     engine = ScenarioEngine(attempt.scenario.graph)
     try:
-        result = engine.apply_choice(attempt, choice_id, now)
+        result = engine.apply_choice(attempt, choice_id, expected_step, now)
     except ScenarioError:
         db.rollback()
         raise
     log = _record(db, attempt, result)
-    db.commit()
+    _commit_step(db)
     return AttemptView(attempt, engine, log)

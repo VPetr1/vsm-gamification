@@ -34,7 +34,7 @@ def test_good_choice_increases_both_scales_and_ends_scenario():
     attempt = make_attempt(graph)
     engine = ScenarioEngine(graph)
 
-    result = engine.apply_choice(attempt, "c1", attempt.node_shown_at + timedelta(seconds=5))
+    result = engine.apply_choice(attempt, "c1", attempt.step, attempt.node_shown_at + timedelta(seconds=5))
 
     assert attempt.status == AttemptStatus.finished
     assert attempt.loyalty == 60
@@ -49,7 +49,7 @@ def test_timeout_applies_timeout_effects_not_any_choice():
     attempt = make_attempt(graph)
     engine = ScenarioEngine(graph)
 
-    result = engine.apply_choice(attempt, None, attempt.node_shown_at + timedelta(seconds=999))
+    result = engine.apply_choice(attempt, None, attempt.step, attempt.node_shown_at + timedelta(seconds=999))
 
     assert result.timed_out is True
     assert attempt.current_node == "n2_escalation"
@@ -62,7 +62,7 @@ def test_choosing_after_timer_expired_counts_as_timeout_even_with_choice_id():
     attempt = make_attempt(graph)
     engine = ScenarioEngine(graph)
 
-    result = engine.apply_choice(attempt, "c1", attempt.node_shown_at + timedelta(seconds=25))
+    result = engine.apply_choice(attempt, "c1", attempt.step, attempt.node_shown_at + timedelta(seconds=25))
 
     assert result.timed_out is True
     assert attempt.current_node == "n2_escalation"
@@ -85,7 +85,7 @@ def test_scales_are_clamped_to_0_100():
     }
     attempt = make_attempt(graph)
     engine = ScenarioEngine(graph)
-    engine.apply_choice(attempt, "c1", attempt.node_shown_at + timedelta(seconds=1))
+    engine.apply_choice(attempt, "c1", attempt.step, attempt.node_shown_at + timedelta(seconds=1))
 
     assert attempt.loyalty == 100
     assert attempt.safety == 0
@@ -95,10 +95,10 @@ def test_apply_choice_on_finished_attempt_raises():
     graph = DEMO_SCENARIO["graph"]
     attempt = make_attempt(graph)
     engine = ScenarioEngine(graph)
-    engine.apply_choice(attempt, "c1", attempt.node_shown_at + timedelta(seconds=1))
+    engine.apply_choice(attempt, "c1", attempt.step, attempt.node_shown_at + timedelta(seconds=1))
 
     with pytest.raises(ScenarioError):
-        engine.apply_choice(attempt, "c1", datetime.now(timezone.utc))
+        engine.apply_choice(attempt, "c1", attempt.step, datetime.now(timezone.utc))
 
 
 def test_unknown_choice_id_raises():
@@ -107,7 +107,7 @@ def test_unknown_choice_id_raises():
     engine = ScenarioEngine(graph)
 
     with pytest.raises(ScenarioError):
-        engine.apply_choice(attempt, "does-not-exist", attempt.node_shown_at + timedelta(seconds=1))
+        engine.apply_choice(attempt, "does-not-exist", attempt.step, attempt.node_shown_at + timedelta(seconds=1))
 
 
 def test_choice_hidden_by_condition_cannot_be_submitted_by_id():
@@ -136,7 +136,7 @@ def test_choice_hidden_by_condition_cannot_be_submitted_by_id():
     engine = ScenarioEngine(graph)
 
     with pytest.raises(ScenarioError):
-        engine.apply_choice(attempt, "gated", attempt.node_shown_at + timedelta(seconds=1))
+        engine.apply_choice(attempt, "gated", attempt.step, attempt.node_shown_at + timedelta(seconds=1))
     assert attempt.loyalty == 50
     assert attempt.current_node == "n1"
 
@@ -174,7 +174,7 @@ def test_null_choice_before_deadline_is_rejected_and_state_unchanged():
     engine = ScenarioEngine(graph)
 
     with pytest.raises(ScenarioError) as exc:
-        engine.apply_choice(attempt, None, T0 + timedelta(seconds=19, microseconds=999_999))
+        engine.apply_choice(attempt, None, attempt.step, T0 + timedelta(seconds=19, microseconds=999_999))
 
     assert exc.value.code == "timer_not_expired"
     assert (attempt.current_node, attempt.loyalty, attempt.safety) == ("n1", 50, 50)
@@ -185,11 +185,11 @@ def test_deadline_boundary_is_inclusive():
     engine = ScenarioEngine(graph)
 
     just_before = make_attempt(graph)
-    result = engine.apply_choice(just_before, "c1", T0 + timedelta(seconds=20) - timedelta(microseconds=1))
+    result = engine.apply_choice(just_before, "c1", just_before.step, T0 + timedelta(seconds=20) - timedelta(microseconds=1))
     assert result.timed_out is False
 
     exactly_at = make_attempt(graph)
-    result = engine.apply_choice(exactly_at, "c1", T0 + timedelta(seconds=20))
+    result = engine.apply_choice(exactly_at, "c1", exactly_at.step, T0 + timedelta(seconds=20))
     assert result.timed_out is True
     assert result.choice_id is None
     assert exactly_at.current_node == "n2_escalation"
@@ -229,5 +229,23 @@ def test_logged_deltas_are_actual_changes_after_clamping():
         },
     }
     attempt = make_attempt(graph)
-    result = ScenarioEngine(graph).apply_choice(attempt, "c1", T0 + timedelta(seconds=1))
+    result = ScenarioEngine(graph).apply_choice(attempt, "c1", attempt.step, T0 + timedelta(seconds=1))
     assert (result.loyalty_delta, result.safety_delta) == (50, -50)
+
+
+def test_steps_increment_and_stale_expected_step_is_rejected():
+    graph = DEMO_SCENARIO["graph"]
+    engine = ScenarioEngine(graph)
+    attempt = make_attempt(graph)
+    assert attempt.step == 0
+
+    with pytest.raises(ScenarioError) as exc:
+        engine.apply_choice(attempt, "c1", 3, T0 + timedelta(seconds=1))
+    assert exc.value.code == "step_mismatch"
+    assert exc.value.extra == {"current_step": 0}
+    assert (attempt.step, attempt.current_node) == (0, "n1")
+
+    result = engine.apply_choice(attempt, "c1", 0, T0 + timedelta(seconds=1))
+    assert result.step == attempt.step == 1
+    assert (result.prev_node_id, result.next_node) == ("n1", "n2_resolved")
+    assert (result.loyalty_after, result.safety_after) == (60, 55)

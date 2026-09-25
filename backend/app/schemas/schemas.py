@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChoiceOut(BaseModel):
@@ -18,6 +18,7 @@ class NodeOut(BaseModel):
 
 
 class LastStepOut(BaseModel):
+    step: int
     node_id: str
     choice_id: str | None
     timed_out: bool
@@ -28,6 +29,7 @@ class AttemptStateOut(BaseModel):
     loyalty: int
     safety: int
     status: str
+    step: int
     node: NodeOut
     node_shown_at: datetime
     deadline: datetime | None
@@ -42,3 +44,4 @@ class StartAttemptIn(BaseModel):
 
 class SubmitChoiceIn(BaseModel):
     choice_id: str | None = None
+    expected_step: int = Field(ge=0, description="The step shown to the player; a stale value gets 409 step_mismatch")

@@ -26,11 +26,15 @@ def visible_choices(node: dict, loyalty: int, safety: int) -> list[dict]:
 
 @dataclass
 class StepResult:
+    step: int
     prev_node_id: str
     choice_id: str | None
     timed_out: bool
+    next_node: str
     loyalty_delta: int
     safety_delta: int
+    loyalty_after: int
+    safety_after: int
 
 
 class ScenarioEngine:
@@ -49,6 +53,7 @@ class ScenarioEngine:
 
     def start(self, attempt: Attempt, now: datetime) -> Attempt:
         attempt.current_node = self.graph["start_node"]
+        attempt.step = 0
         attempt.node_shown_at = now
         attempt.loyalty = 50
         attempt.safety = 50
@@ -67,9 +72,15 @@ class ScenarioEngine:
         deadline = self.deadline(attempt)
         return deadline is not None and as_aware(now) >= deadline
 
-    def apply_choice(self, attempt: Attempt, choice_id: str | None, now: datetime) -> StepResult:
+    def apply_choice(self, attempt: Attempt, choice_id: str | None, expected_step: int, now: datetime) -> StepResult:
         """A choice made at or after the deadline is ignored and the timeout branch applies."""
         self._ensure_in_progress(attempt)
+        if expected_step != attempt.step:
+            raise ScenarioError(
+                "step_mismatch",
+                f"expected step {expected_step}, but the attempt is at step {attempt.step}",
+                current_step=attempt.step,
+            )
         node = self.current_node(attempt)
 
         if self.is_expired(attempt, now):
@@ -114,6 +125,7 @@ class ScenarioEngine:
         attempt.loyalty = _clamp(old_loyalty + effects.get("loyalty", 0))
         attempt.safety = _clamp(old_safety + effects.get("safety", 0))
         attempt.current_node = outcome["next_node"]
+        attempt.step += 1
         attempt.node_shown_at = now
 
         next_node = self.nodes[attempt.current_node]
@@ -123,9 +135,13 @@ class ScenarioEngine:
             attempt.finished_at = now
 
         return StepResult(
+            step=attempt.step,
             prev_node_id=prev_node_id,
             choice_id=choice_id,
             timed_out=timed_out,
+            next_node=attempt.current_node,
             loyalty_delta=attempt.loyalty - old_loyalty,
             safety_delta=attempt.safety - old_safety,
+            loyalty_after=attempt.loyalty,
+            safety_after=attempt.safety,
         )

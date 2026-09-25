@@ -10,6 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -61,32 +62,40 @@ class Attempt(Base):
     scenario_id: Mapped[str] = mapped_column(ForeignKey("scenarios.id"))
 
     current_node: Mapped[str] = mapped_column(String(100))
+    step: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     loyalty: Mapped[int] = mapped_column(Integer, default=50)
     safety: Mapped[int] = mapped_column(Integer, default=50)
     status: Mapped[AttemptStatus] = mapped_column(
         Enum(AttemptStatus, name="attempt_status"), default=AttemptStatus.in_progress
     )
-    ending_summary: Mapped[str] = mapped_column(Text, nullable=True)
+    ending_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     node_shown_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     employee: Mapped[Employee] = relationship(back_populates="attempts")
     scenario: Mapped[Scenario] = relationship(back_populates="attempts")
-    logs: Mapped[list["ChoiceLog"]] = relationship(back_populates="attempt", order_by="ChoiceLog.created_at")
+    logs: Mapped[list["ChoiceLog"]] = relationship(back_populates="attempt", order_by="ChoiceLog.step")
 
 
 class ChoiceLog(Base):
+    """One row per applied step; the unique (attempt_id, step) pair rejects a concurrent duplicate."""
+
     __tablename__ = "choice_logs"
+    __table_args__ = (UniqueConstraint("attempt_id", "step", name="uq_choice_logs_attempt_step"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     attempt_id: Mapped[str] = mapped_column(ForeignKey("attempts.id"))
+    step: Mapped[int] = mapped_column(Integer)
     node_id: Mapped[str] = mapped_column(String(100))
-    choice_id: Mapped[str] = mapped_column(String(100), nullable=True)
+    choice_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     timed_out: Mapped[bool] = mapped_column(default=False)
+    next_node: Mapped[str | None] = mapped_column(String(100), nullable=True)
     loyalty_delta: Mapped[int] = mapped_column(Integer, default=0)
     safety_delta: Mapped[int] = mapped_column(Integer, default=0)
+    loyalty_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    safety_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     attempt: Mapped[Attempt] = relationship(back_populates="logs")

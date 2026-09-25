@@ -40,3 +40,38 @@ def test_pre_alembic_database_is_stamped_then_upgraded(tmp_path):
     finally:
         engine.dispose()
     assert _schema_diff(url) == []
+
+
+def _insert_legacy_rows(url: str) -> None:
+    """Rows as the pre-migration code wrote them: an attempt with two logged steps."""
+    engine = create_engine(url)
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO employees VALUES ('e1', 'Синтетический Проводник', '', '', '2026-09-25 10:00:00')"))
+        conn.execute(
+            text("INSERT INTO scenarios VALUES ('s1', 'demo', '', :graph, '2026-09-25 10:00:00')"),
+            {"graph": '{"start_node": "n1", "nodes": {}}'},
+        )
+        conn.execute(
+            text(
+                "INSERT INTO attempts VALUES ('a1', 'e1', 's1', 'n3', 55, 50, 'in_progress', NULL, "
+                "'2026-09-25 10:02:00', '2026-09-25 10:00:00', NULL)"
+            )
+        )
+        conn.execute(text("INSERT INTO choice_logs VALUES ('l2', 'a1', 'n2', 'c2', 0, 0, 0, '2026-09-25 10:02:00')"))
+        conn.execute(text("INSERT INTO choice_logs VALUES ('l1', 'a1', 'n1', 'c1', 0, 5, 0, '2026-09-25 10:01:00')"))
+    engine.dispose()
+
+
+def test_upgrade_backfills_steps_for_existing_attempts(tmp_path):
+    url = f"sqlite:///{tmp_path / 'data.db'}"
+    command.upgrade(alembic_config(url), "0001")
+    _insert_legacy_rows(url)
+
+    upgrade(url)
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        assert conn.execute(text("SELECT step FROM attempts WHERE id = 'a1'")).scalar() == 2
+        steps = conn.execute(text("SELECT id, step FROM choice_logs ORDER BY step")).all()
+    engine.dispose()
+    assert [tuple(r) for r in steps] == [("l1", 1), ("l2", 2)]
