@@ -4,9 +4,11 @@ import pytest
 from sqlalchemy import func, select
 
 from app.models.models import Attempt, ChoiceLog, Employee, Scenario
-from app.scenarios.demo_scenario import DEMO_SCENARIO
+from app.scenarios.library import load_scenario
 from app.scenarios.errors import ScenarioError
 from app.services import attempts as service
+
+DEMO_SCENARIO = load_scenario("seat_recline")
 
 
 def _seed(db):
