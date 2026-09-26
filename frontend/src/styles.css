@@ -644,10 +644,11 @@ a {
 
 .timer {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   display: grid;
-  justify-items: end;
+  justify-items: center;
   padding: 8px 14px;
   border-radius: 12px;
   font-weight: 700;
@@ -679,7 +680,7 @@ a {
 
 @keyframes pulse {
   50% {
-    transform: scale(1.04);
+    transform: translateX(-50%) scale(1.04);
   }
 }
 
@@ -1559,5 +1560,55 @@ a {
 
   .editor-toolbar {
     position: static;
+  }
+}
+
+/* Header layout: one row on laptops, two rows with a scrollable nav on phones. */
+.header-row {
+  flex-wrap: nowrap;
+}
+
+.main-nav {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.main-nav a {
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .user-name {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .header-row {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .brand {
+    order: 1;
+    flex: 1;
+  }
+
+  .user-box {
+    order: 2;
+  }
+
+  .main-nav {
+    order: 3;
+    flex: 1 0 100%;
+    margin: 0 -16px;
+    padding: 0 12px 4px;
+  }
+
+  .main-nav a {
+    padding: 8px 10px;
   }
 }
