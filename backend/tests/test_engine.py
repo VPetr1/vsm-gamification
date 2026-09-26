@@ -279,7 +279,8 @@ def test_initial_scales_and_flags_come_from_the_scenario():
 
 
 def test_old_graph_without_initial_starts_at_50_50_with_no_flags():
-    attempt = make_attempt(DEMO_SCENARIO["graph"])
+    v1_graph = {k: v for k, v in DEMO_SCENARIO["graph"].items() if k not in ("flags", "awards")}
+    attempt = make_attempt(v1_graph)
     assert (attempt.loyalty, attempt.safety, attempt.flags) == (50, 50, {})
 
 

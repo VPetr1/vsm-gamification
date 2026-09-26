@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.models.models import Attempt, AttemptStatus, ChoiceLog, Employee, Scenario
 from app.scenarios.engine import ScenarioEngine, StepResult
 from app.scenarios.errors import ScenarioError
+from app.services.rewards import apply_rewards
 
 
 @dataclass
@@ -39,7 +40,9 @@ def _last_log(db: Session, attempt_id: str) -> ChoiceLog | None:
     ).scalar_one_or_none()
 
 
-def _record(db: Session, attempt: Attempt, result: StepResult) -> ChoiceLog:
+def _record(db: Session, attempt: Attempt, result: StepResult, now: datetime) -> ChoiceLog:
+    if attempt.status == AttemptStatus.finished:
+        apply_rewards(db, attempt, now)
     log = ChoiceLog(
         attempt_id=attempt.id,
         step=result.step,
@@ -95,7 +98,7 @@ def get_attempt(db: Session, attempt_id: str, employee_id: str, now: datetime) -
     if result is None:
         db.rollback()  # release the row lock; nothing changed
         return AttemptView(attempt, engine, _last_log(db, attempt_id))
-    log = _record(db, attempt, result)
+    log = _record(db, attempt, result, now)
     try:
         _commit_step(db)
     except ScenarioError:
@@ -115,7 +118,7 @@ def submit_choice(
     except ScenarioError:
         db.rollback()
         raise
-    log = _record(db, attempt, result)
+    log = _record(db, attempt, result, now)
     _commit_step(db)
     return AttemptView(attempt, engine, log)
 

@@ -5,12 +5,17 @@ A scenario whose data changed is updated in place with version + 1; attempts
 already started keep their own snapshot.
 """
 
+from datetime import datetime, timedelta
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.clock import utcnow
 from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.security import hash_password, verify_password
-from app.models.models import Employee, Role, Scenario
+from app.models.models import Attempt, Employee, Role, Scenario
+from app.services import attempts as attempt_service
 from app.scenarios.library import builtin_scenarios
 from app.scenarios.validator import validate_graph
 
@@ -26,6 +31,43 @@ DEMO_ACCOUNTS = [
     {"login": "metodist", "full_name": "Наталья Крылова", "depot": "Учебный центр", "brigade": "", "synthetic": False,
      "role": Role.methodologist.value},
 ]
+
+
+# Pre-played paths for synthetic colleagues; None means "let the timer run out".
+SYNTHETIC_RESULTS = {
+    "sergeev": [("Место у окна", ["calm", "stow_together", "check", "tactful", "escort"]),
+                ("Конфликт из-за откинутого кресла", ["c1"])],
+    "orlova": [("Место у окна", ["order", "stow_together", "check", "tactful", "escort"]),
+               ("Конфликт из-за откинутого кресла", ["c2"])],
+    "kim": [("Место у окна", ["ignore", "call_senior"]), ("Конфликт из-за откинутого кресла", [None])],
+    "belova": [("Место у окна", ["calm", "stow_yourself", "reseat_girl", "check_now", "tactful", "send_alone"])],
+    "nazarov": [("Место у окна", ["calm", None, "call_colleague", "check", "tactful", "escort"]),
+                ("Конфликт из-за откинутого кресла", ["c1"])],
+}
+
+
+def _play_synthetic(db: Session, employee: Employee, scenario: Scenario, path: list, start: datetime) -> None:
+    view = attempt_service.start_attempt(db, employee.id, scenario.id, start)
+    attempt_id = view.attempt.id
+    db.get(Attempt, attempt_id).is_synthetic = True
+    db.commit()
+    now, state = start, view
+    for choice in path:
+        node = state.engine.current_node(state.attempt)
+        now = now + timedelta(seconds=(node.get("timer_seconds") or 0) if choice is None else 7)
+        state = attempt_service.submit_choice(db, attempt_id, employee.id, choice, state.attempt.step, now)
+
+
+def seed_synthetic_results(db: Session, now: datetime) -> None:
+    """Only for colleagues without any attempts, so re-running the seed adds nothing."""
+    scenarios = {s.title: s for s in db.scalars(select(Scenario))}
+    for day, (login, runs) in enumerate(SYNTHETIC_RESULTS.items(), start=1):
+        employee = db.scalars(select(Employee).where(Employee.login == login)).first()
+        if employee is None or db.scalar(select(func.count()).select_from(Attempt).where(Attempt.employee_id == employee.id)):
+            continue
+        for offset, (title, path) in enumerate(runs):
+            if title in scenarios:
+                _play_synthetic(db, employee, scenarios[title], path, now - timedelta(days=day, hours=offset))
 
 
 def seed_accounts(db: Session, password: str) -> None:
@@ -60,6 +102,7 @@ def seed(db: Session) -> None:
 
     seed_accounts(db, settings.demo_password)
     db.commit()
+    seed_synthetic_results(db, utcnow())
 
 
 def run() -> None:

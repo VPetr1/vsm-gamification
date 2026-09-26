@@ -1,4 +1,4 @@
-from app.models.models import Employee, Scenario
+from app.models.models import Attempt, Employee, Scenario
 from app.seed import seed
 
 
@@ -11,6 +11,9 @@ def test_seed_is_idempotent_and_versions_changed_scenarios(session_factory):
         assert {s.version for s in db.query(Scenario)} == {1}
         assert db.query(Employee).count() == 7
         assert db.query(Employee).filter_by(role="methodologist").count() == 1
+        synthetic = db.query(Attempt).filter_by(is_synthetic=True).count()
+        assert synthetic == 9  # a second seed run added none
+        assert db.query(Attempt).filter_by(is_synthetic=False).count() == 0
 
         window = db.query(Scenario).filter_by(title="Место у окна").one()
         window.graph = {**window.graph, "start_node": "tickets"}

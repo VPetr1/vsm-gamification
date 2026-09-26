@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 from app.api.deps import current_user
 from app.core.clock import as_utc, current_time
 from app.core.db import get_db
-from app.models.models import Attempt, ChoiceLog, Employee
+from sqlalchemy import select
+
+from app.gamification.rules import ACHIEVEMENTS
+from app.models.models import Attempt, ChoiceLog, Employee, EmployeeAchievement, ScenarioBest
 from app.schemas.schemas import (
     AttemptResultOut,
     AttemptStateOut,
@@ -15,6 +18,7 @@ from app.schemas.schemas import (
     LastStepOut,
     NodeOut,
     ResultStepOut,
+    RewardOut,
     ScalesOut,
     StartAttemptIn,
     SubmitChoiceIn,
@@ -119,6 +123,23 @@ def _result_step(nodes: dict, log: ChoiceLog) -> ResultStepOut:
     )
 
 
+def _reward_out(db: Session, attempt: Attempt) -> RewardOut | None:
+    if attempt.score is None:
+        return None  # finished before rewards existed (migrated data)
+    best = db.scalar(
+        select(ScenarioBest.best_score).where(
+            ScenarioBest.employee_id == attempt.employee_id, ScenarioBest.scenario_id == attempt.scenario_id
+        )
+    )
+    earned = db.scalars(select(EmployeeAchievement.achievement_id).where(EmployeeAchievement.attempt_id == attempt.id))
+    return RewardOut(
+        score=attempt.score,
+        xp_gained=attempt.xp_gained or 0,
+        best_score=best if best is not None else attempt.score,
+        achievements=[{"id": a, "title": ACHIEVEMENTS[a].title} for a in earned if a in ACHIEVEMENTS],
+    )
+
+
 def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
     graph = attempt.graph_snapshot
     ending = graph["nodes"][attempt.current_node]
@@ -146,4 +167,7 @@ def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
 def get_result(
     attempt_id: str, db: Session = Depends(get_db), user: Employee = Depends(current_user)
 ) -> AttemptResultOut:
-    return _result_out(*service.finished_attempt_with_logs(db, attempt_id, user.id))
+    attempt, logs = service.finished_attempt_with_logs(db, attempt_id, user.id)
+    result = _result_out(attempt, logs)
+    result.reward = _reward_out(db, attempt)
+    return result
