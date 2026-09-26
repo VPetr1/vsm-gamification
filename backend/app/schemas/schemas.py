@@ -8,6 +8,21 @@ class ChoiceOut(BaseModel):
     text: str
 
 
+class CharacterOut(BaseModel):
+    id: str
+    name: str
+    figure: str
+    pose: str
+    position: str
+    mood: str
+
+
+class NodeVisualOut(BaseModel):
+    speaker: str | None
+    characters: list[CharacterOut]
+    props: list[str]
+
+
 class NodeOut(BaseModel):
     node_id: str
     text: str
@@ -15,6 +30,7 @@ class NodeOut(BaseModel):
     choices: list[ChoiceOut] = []
     is_ending: bool = False
     ending_summary: str | None = None
+    visual: NodeVisualOut | None = None
 
 
 class LastStepOut(BaseModel):

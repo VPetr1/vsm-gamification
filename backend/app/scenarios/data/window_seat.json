@@ -114,7 +114,30 @@
               "safety": 0
             }
           }
-        ]
+        ],
+        "visual": {
+          "speaker": "woman",
+          "moods": [
+            {
+              "character": "woman",
+              "mood": "upset"
+            },
+            {
+              "character": "man",
+              "mood": "calm"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "ignored": {
         "text": "Через несколько минут девушка возвращается вместе с соседями: «Мы же просили помочь!» Мужчина всё так же сидит в кресле 7А, чемодан по-прежнему перегораживает проход.",
@@ -141,7 +164,30 @@
               "communication": 2
             }
           }
-        ]
+        ],
+        "visual": {
+          "speaker": "woman",
+          "moods": [
+            {
+              "character": "woman",
+              "mood": "angry"
+            },
+            {
+              "character": "man",
+              "mood": "calm"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "suitcase": {
         "text": "Поезд набирает скорость. По проходу идёт пассажирка с горячим чаем, следом едет тележка сервиса. Чемодан мужчины перегораживает проход — решать нужно сейчас.",
@@ -209,7 +255,36 @@
               "stress_resistance": 1
             }
           }
-        ]
+        ],
+        "visual": {
+          "moods": [
+            {
+              "character": "man",
+              "mood": "upset",
+              "when": {
+                "flag": "was_rude"
+              }
+            },
+            {
+              "character": "man",
+              "mood": "calm"
+            },
+            {
+              "character": "woman",
+              "mood": "worried"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "trip": {
         "text": "Пассажирка споткнулась о чемодан, чай разлился по полу. Она не пострадала, но испугана, а в проходе скользко.",
@@ -262,7 +337,32 @@
               "communication": 0
             }
           }
-        ]
+        ],
+        "visual": {
+          "moods": [
+            {
+              "character": "woman",
+              "mood": "scared"
+            },
+            {
+              "character": "man",
+              "mood": "worried"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            },
+            {
+              "id": "spill"
+            }
+          ]
+        }
       },
       "tickets": {
         "text": "Мужчина настаивает: «У меня билет на 7А, я никуда не пойду». Девушка протягивает свой билет — тоже на место 7А. Соседи наблюдают.",
@@ -312,7 +412,37 @@
               "communication": 0
             }
           }
-        ]
+        ],
+        "visual": {
+          "speaker": "man",
+          "moods": [
+            {
+              "character": "man",
+              "mood": "angry",
+              "when": {
+                "flag": "was_rude"
+              }
+            },
+            {
+              "character": "man",
+              "mood": "upset"
+            },
+            {
+              "character": "woman",
+              "mood": "worried"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "promise": {
         "text": "Мужчина с чемоданом ушёл в вагон повышенного класса, но через десять минут вернулся: свободных мест там нет, а начальник поезда подтвердил, что бесплатного повышения не будет. Мужчина требует выполнить обещание, его чемодан снова стоит в проходе.",
@@ -376,7 +506,30 @@
               "safety": 2
             }
           }
-        ]
+        ],
+        "visual": {
+          "speaker": "man",
+          "moods": [
+            {
+              "character": "man",
+              "mood": "angry"
+            },
+            {
+              "character": "woman",
+              "mood": "upset"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "reseat": {
         "text": "Девушка неохотно пересела на место 12С. На следующей остановке входит пассажир с билетом на 12С — теперь без места осталась уже девушка, и она просит книгу жалоб.",
@@ -397,7 +550,30 @@
             "explanation": "Обращение к старшему не штрафуется. Потери по шкалам — следствие пересадки без проверки.",
             "next_node": "end_senior"
           }
-        ]
+        ],
+        "visual": {
+          "speaker": "woman",
+          "moods": [
+            {
+              "character": "woman",
+              "mood": "angry"
+            },
+            {
+              "character": "man",
+              "mood": "calm"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "wagon_error": {
         "text": "Вы сверяете билеты: у девушки — вагон 5, место 7А; у мужчины — вагон 6, место 7А. Мужчина перепутал вагон: места одинаковые, номер вагона он не заметил.",
@@ -433,7 +609,30 @@
               "was_rude": true
             }
           }
-        ]
+        ],
+        "visual": {
+          "speaker": "man",
+          "moods": [
+            {
+              "character": "man",
+              "mood": "worried"
+            },
+            {
+              "character": "woman",
+              "mood": "calm"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "resolution": {
         "text": "Мужчина понимает, что ошибся вагоном, и собирается переходить в вагон 6. Как он отреагирует, зависит от того, как с ним обращались до этого.",
@@ -536,7 +735,37 @@
               "communication": 0
             }
           }
-        ]
+        ],
+        "visual": {
+          "speaker": "man",
+          "moods": [
+            {
+              "character": "man",
+              "mood": "upset",
+              "when": {
+                "flag": "was_rude"
+              }
+            },
+            {
+              "character": "man",
+              "mood": "calm"
+            },
+            {
+              "character": "woman",
+              "mood": "calm"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "aisle": {
         "text": "Мужчина уже у выхода из вагона, но его чемодан так и стоит в проходе, мешая пассажирам.",
@@ -599,25 +828,129 @@
               "safety": 0
             }
           }
-        ]
+        ],
+        "visual": {
+          "moods": [
+            {
+              "character": "man",
+              "mood": "worried"
+            },
+            {
+              "character": "woman",
+              "mood": "worried"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "end_calm": {
         "text": "Мужчина благодарит за помощь и уходит в свой вагон, девушка спокойно занимает место у окна. Проход свободен, в вагоне тихо.",
         "is_ending": true,
         "outcome": "calm_resolution",
-        "ending_summary": "Спокойное разрешение: вы проверили факты, обеспечили безопасность прохода и сохранили уважение обоих пассажиров."
+        "ending_summary": "Спокойное разрешение: вы проверили факты, обеспечили безопасность прохода и сохранили уважение обоих пассажиров.",
+        "visual": {
+          "moods": [
+            {
+              "character": "man",
+              "mood": "happy"
+            },
+            {
+              "character": "woman",
+              "mood": "happy"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "end_dissatisfied": {
         "text": "Места заняты по билетам, но осадок остался: мужчина уходит обиженным, девушка и соседи недовольны тем, как всё происходило.",
         "is_ending": true,
         "outcome": "resolved_with_dissatisfaction",
-        "ending_summary": "Разрешение с недовольством: конфликт формально исчерпан, но резкость или публичное унижение, промедление, пустое обещание или угроза безопасности снизили доверие пассажиров."
+        "ending_summary": "Разрешение с недовольством: конфликт формально исчерпан, но резкость или публичное унижение, промедление, пустое обещание или угроза безопасности снизили доверие пассажиров.",
+        "visual": {
+          "moods": [
+            {
+              "character": "man",
+              "mood": "upset"
+            },
+            {
+              "character": "woman",
+              "mood": "upset"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
       },
       "end_senior": {
         "text": "Приходит начальник поезда и берёт урегулирование конфликта на себя.",
         "is_ending": true,
         "outcome": "escalated_to_senior",
-        "ending_summary": "Передача старшему: затянувшийся конфликт урегулирует начальник поезда. Само обращение за помощью не снижает оценку — потери по шкалам связаны с решениями, из-за которых конфликт затянулся."
+        "ending_summary": "Передача старшему: затянувшийся конфликт урегулирует начальник поезда. Само обращение за помощью не снижает оценку — потери по шкалам связаны с решениями, из-за которых конфликт затянулся.",
+        "visual": {
+          "moods": [
+            {
+              "character": "man",
+              "mood": "angry"
+            },
+            {
+              "character": "woman",
+              "mood": "upset"
+            }
+          ],
+          "props": [
+            {
+              "id": "suitcase",
+              "when": {
+                "not": {
+                  "flag": "aisle_cleared"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "visual": {
+      "characters": {
+        "man": {
+          "name": "Пассажир у окна",
+          "figure": "man",
+          "pose": "sitting",
+          "position": "left"
+        },
+        "woman": {
+          "name": "Пассажирка с билетом на 7А",
+          "figure": "woman",
+          "pose": "standing",
+          "position": "right"
+        }
       }
     }
   }
