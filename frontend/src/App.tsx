@@ -4,8 +4,10 @@ import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { CatalogPage } from "./pages/CatalogPage";
 import { HomePage } from "./pages/HomePage";
+import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PlayPage } from "./pages/PlayPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { ResultPage } from "./pages/ResultPage";
 import { Loading } from "./components/States";
 
@@ -45,6 +47,8 @@ export function App() {
             <Route path="scenarios" element={<CatalogPage />} />
             <Route path="attempts/:attemptId" element={<PlayPage />} />
             <Route path="attempts/:attemptId/result" element={<ResultPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="leaderboard" element={<LeaderboardPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

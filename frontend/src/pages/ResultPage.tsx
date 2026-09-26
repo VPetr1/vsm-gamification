@@ -5,13 +5,10 @@ import { getResult, startAttempt } from "../api/endpoints";
 import type { AttemptResult } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorState, Loading } from "../components/States";
+import { CompetencyList } from "../components/Progress";
+import { OUTCOME_LABEL } from "../utils/labels";
 import { formatDateTime, signed } from "../utils/time";
 
-const OUTCOME_LABEL: Record<string, string> = {
-  calm_resolution: "Спокойное разрешение",
-  resolved_with_dissatisfaction: "Разрешено с недовольством",
-  escalated_to_senior: "Передано старшему",
-};
 
 function Delta({ label, value }: { label: string; value: number }) {
   if (value === 0) return <span className="chip">{label}: 0</span>;
@@ -82,6 +79,45 @@ export function ResultPage() {
         </div>
       </section>
 
+      {result.reward && (
+        <section className="card reward">
+          <h2>Награды</h2>
+          <div className="finals">
+            <div>
+              <span className="muted">Результат рейса</span>
+              <strong>{result.reward.score}</strong>
+            </div>
+            <div>
+              <span className="muted">Опыт</span>
+              <strong>+{result.reward.xp_gained}</strong>
+            </div>
+            <div>
+              <span className="muted">Лучший результат</span>
+              <strong>{result.reward.best_score}</strong>
+            </div>
+          </div>
+          <p className="muted small">
+            Результат — среднее двух шкал на финале. Опыт начисляется только за улучшение лучшего результата в этом
+            сценарии.
+          </p>
+          {result.reward.achievements.length > 0 && (
+            <div className="chips">
+              {result.reward.achievements.map((a) => (
+                <span key={a.id} className="chip chip-good">
+                  ★ {a.title}
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      <section className="card">
+        <h2>Компетенции в этом рейсе</h2>
+        <p className="muted small">Набрано из максимально доступного среди вариантов, которые вы видели.</p>
+        <CompetencyList items={result.competencies.map((c) => ({ ...c, description: undefined }))} />
+      </section>
+
       <section>
         <h2>Решения и последствия</h2>
         <ol className="timeline">
@@ -95,6 +131,11 @@ export function ResultPage() {
               <div className="chips">
                 <Delta label="Лояльность" value={step.loyalty_delta} />
                 <Delta label="Безопасность" value={step.safety_delta} />
+                {step.assessment.map((a) => (
+                  <span key={a.id} className={`chip ${a.earned === a.max ? "chip-good" : "chip-warn"}`}>
+                    {a.title}: {a.earned}/{a.max}
+                  </span>
+                ))}
               </div>
               {step.explanation && <p>{step.explanation}</p>}
               {step.lesson && (

@@ -44,7 +44,7 @@ export function LoginPage() {
     setSubmitting(true);
     setFormError(null);
     try {
-      const account = await signIn(selected, password);
+      await signIn(selected, password);
       navigate(from, { replace: true });
     } catch (err) {
       setFormError(err instanceof ApiError && err.code === "invalid_credentials" ? "Неверный пароль." : err instanceof ApiError ? err.message : "Не удалось войти.");
