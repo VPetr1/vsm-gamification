@@ -27,7 +27,7 @@ GRAPH = {
 def _finished_attempt(client, clock):
     employee_id = _create_employee(client)
     scenario_id = client.post("/scenarios", json={"title": "Тест", "graph": GRAPH}).json()["id"]
-    attempt_id = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id}).json()["attempt_id"]
+    attempt_id = client.post("/attempts", json={"scenario_id": scenario_id}).json()["attempt_id"]
     clock.advance(3)
     client.post(f"/attempts/{attempt_id}/choice", json={"choice_id": "help", "expected_step": 0})
     clock.advance(10)
@@ -73,7 +73,7 @@ def test_result_lists_decisions_with_actual_deltas_and_explanations(client, cloc
 def test_result_is_not_available_before_the_end(client, clock):
     employee_id = _create_employee(client)
     scenario_id = client.post("/scenarios", json={"title": "Тест", "graph": GRAPH}).json()["id"]
-    attempt_id = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id}).json()["attempt_id"]
+    attempt_id = client.post("/attempts", json={"scenario_id": scenario_id}).json()["attempt_id"]
 
     r = client.get(f"/attempts/{attempt_id}/result")
 

@@ -20,9 +20,14 @@ class AttemptView:
     last_step: ChoiceLog | None
 
 
-def _lock_attempt(db: Session, attempt_id: str) -> Attempt:
+def _owned(attempt_id: str, employee_id: str):
+    # Someone else's attempt is reported as missing, so attempt ids cannot be probed.
+    return select(Attempt).where(Attempt.id == attempt_id, Attempt.employee_id == employee_id)
+
+
+def _lock_attempt(db: Session, attempt_id: str, employee_id: str) -> Attempt:
     # FOR UPDATE serialises concurrent requests on one attempt (Postgres; SQLite ignores it).
-    attempt = db.execute(select(Attempt).where(Attempt.id == attempt_id).with_for_update()).scalar_one_or_none()
+    attempt = db.execute(_owned(attempt_id, employee_id).with_for_update()).scalar_one_or_none()
     if attempt is None:
         raise ScenarioError("attempt_not_found", "attempt not found")
     return attempt
@@ -82,9 +87,9 @@ def start_attempt(db: Session, employee_id: str, scenario_id: str, now: datetime
     return AttemptView(attempt, engine, last_step=None)
 
 
-def get_attempt(db: Session, attempt_id: str, now: datetime) -> AttemptView:
+def get_attempt(db: Session, attempt_id: str, employee_id: str, now: datetime) -> AttemptView:
     """Returns current state; if the timer ran out while the client was away, applies the timeout first."""
-    attempt = _lock_attempt(db, attempt_id)
+    attempt = _lock_attempt(db, attempt_id, employee_id)
     engine = ScenarioEngine(attempt.graph_snapshot)
     result = engine.expire_if_due(attempt, now)
     if result is None:
@@ -101,9 +106,9 @@ def get_attempt(db: Session, attempt_id: str, now: datetime) -> AttemptView:
 
 
 def submit_choice(
-    db: Session, attempt_id: str, choice_id: str | None, expected_step: int, now: datetime
+    db: Session, attempt_id: str, employee_id: str, choice_id: str | None, expected_step: int, now: datetime
 ) -> AttemptView:
-    attempt = _lock_attempt(db, attempt_id)
+    attempt = _lock_attempt(db, attempt_id, employee_id)
     engine = ScenarioEngine(attempt.graph_snapshot)
     try:
         result = engine.apply_choice(attempt, choice_id, expected_step, now)
@@ -115,9 +120,9 @@ def submit_choice(
     return AttemptView(attempt, engine, log)
 
 
-def finished_attempt_with_logs(db: Session, attempt_id: str) -> tuple[Attempt, list[ChoiceLog]]:
+def finished_attempt_with_logs(db: Session, attempt_id: str, employee_id: str) -> tuple[Attempt, list[ChoiceLog]]:
     """The debrief is only available after the end, so it never reveals effects of pending choices."""
-    attempt = db.get(Attempt, attempt_id)
+    attempt = db.execute(_owned(attempt_id, employee_id)).scalar_one_or_none()
     if attempt is None:
         raise ScenarioError("attempt_not_found", "attempt not found")
     if attempt.status != AttemptStatus.finished:

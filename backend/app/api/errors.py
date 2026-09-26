@@ -4,6 +4,9 @@ from fastapi.responses import JSONResponse
 from app.scenarios.errors import ScenarioError
 
 STATUS_BY_CODE = {
+    "unauthorized": 401,
+    "invalid_credentials": 401,
+    "forbidden": 403,
     "attempt_not_found": 404,
     "employee_not_found": 404,
     "scenario_not_found": 404,

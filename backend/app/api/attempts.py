@@ -3,9 +3,10 @@ from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.api.deps import current_user
 from app.core.clock import as_utc, current_time
 from app.core.db import get_db
-from app.models.models import Attempt, ChoiceLog
+from app.models.models import Attempt, ChoiceLog, Employee
 from app.schemas.schemas import (
     AttemptResultOut,
     AttemptStateOut,
@@ -64,14 +65,22 @@ def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
 
 @router.post("", response_model=AttemptStateOut, status_code=201)
 def start_attempt(
-    payload: StartAttemptIn, db: Session = Depends(get_db), now: datetime = Depends(current_time)
+    payload: StartAttemptIn,
+    db: Session = Depends(get_db),
+    now: datetime = Depends(current_time),
+    user: Employee = Depends(current_user),
 ) -> AttemptStateOut:
-    return _state_out(service.start_attempt(db, payload.employee_id, payload.scenario_id, now), now)
+    return _state_out(service.start_attempt(db, user.id, payload.scenario_id, now), now)
 
 
 @router.get("/{attempt_id}", response_model=AttemptStateOut)
-def get_attempt(attempt_id: str, db: Session = Depends(get_db), now: datetime = Depends(current_time)) -> AttemptStateOut:
-    return _state_out(service.get_attempt(db, attempt_id, now), now)
+def get_attempt(
+    attempt_id: str,
+    db: Session = Depends(get_db),
+    now: datetime = Depends(current_time),
+    user: Employee = Depends(current_user),
+) -> AttemptStateOut:
+    return _state_out(service.get_attempt(db, attempt_id, user.id, now), now)
 
 
 @router.post("/{attempt_id}/choice", response_model=AttemptStateOut)
@@ -80,8 +89,11 @@ def submit_choice(
     payload: SubmitChoiceIn,
     db: Session = Depends(get_db),
     now: datetime = Depends(current_time),
+    user: Employee = Depends(current_user),
 ) -> AttemptStateOut:
-    return _state_out(service.submit_choice(db, attempt_id, payload.choice_id, payload.expected_step, now), now)
+    return _state_out(
+        service.submit_choice(db, attempt_id, user.id, payload.choice_id, payload.expected_step, now), now
+    )
 
 
 def _result_step(nodes: dict, log: ChoiceLog) -> ResultStepOut:
@@ -131,5 +143,7 @@ def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
 
 
 @router.get("/{attempt_id}/result", response_model=AttemptResultOut)
-def get_result(attempt_id: str, db: Session = Depends(get_db)) -> AttemptResultOut:
-    return _result_out(*service.finished_attempt_with_logs(db, attempt_id))
+def get_result(
+    attempt_id: str, db: Session = Depends(get_db), user: Employee = Depends(current_user)
+) -> AttemptResultOut:
+    return _result_out(*service.finished_attempt_with_logs(db, attempt_id, user.id))
