@@ -17,6 +17,8 @@ STATUS_BY_CODE = {
     "choice_not_available": 422,
     "choice_required": 422,
     "bad_scope": 422,
+    "invalid_scenario": 422,
+    "nothing_published": 409,
 }
 
 

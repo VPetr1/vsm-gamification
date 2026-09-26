@@ -50,16 +50,28 @@ class Employee(Base):
 
 
 class Scenario(Base):
+    """Published fields (title..graph, version >= 1) plus an optional editor draft.
+
+    version 0 means "never published": such scenarios are invisible to conductors.
+    """
+
     __tablename__ = "scenarios"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     title: Mapped[str] = mapped_column(String(300))
     description: Mapped[str] = mapped_column(Text, default="")
-    graph: Mapped[dict] = mapped_column(JSON)
+    graph: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # Catalog tags; competency ids among them drive recommendations.
     tags: Mapped[list] = mapped_column(JSON, default=list)
     version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    # {"title", "description", "tags", "graph"} being edited; not validated until publishing.
+    draft: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Stable key of a bundled scenario (file name) and who last published it: builtin | api | editor.
+    key: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)
+    origin: Mapped[str] = mapped_column(String(20), default="api", server_default="api")
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="scenario")
 
@@ -77,6 +89,7 @@ class Attempt(Base):
     scenario_id: Mapped[str] = mapped_column(ForeignKey("scenarios.id"))
     # Frozen copy of the graph at start: later edits to the scenario never affect this attempt.
     scenario_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    scenario_title: Mapped[str] = mapped_column(String(300), default="", server_default="")
     graph_snapshot: Mapped[dict] = mapped_column(JSON)
 
     current_node: Mapped[str] = mapped_column(String(100))
