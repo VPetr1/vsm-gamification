@@ -26,7 +26,7 @@ def test_full_scenario_playthrough_to_saved_result(client):
     employee_id = _create_employee(client)
     scenario_id = _create_scenario(client)
 
-    r = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id})
+    r = client.post("/attempts", json={"scenario_id": scenario_id})
     assert r.status_code == 201
     state = r.json()
     attempt_id = state["attempt_id"]
@@ -52,10 +52,10 @@ def test_scenario_creation_rejects_invalid_graph(client):
     assert r.status_code == 422
 
 
-def test_start_attempt_with_unknown_employee_returns_404(client):
-    scenario_id = _create_scenario(client)
-    r = client.post("/attempts", json={"employee_id": "does-not-exist", "scenario_id": scenario_id})
+def test_start_attempt_with_unknown_scenario_returns_404(client):
+    r = client.post("/attempts", json={"scenario_id": "does-not-exist"})
     assert r.status_code == 404
+    assert r.json()["detail"]["code"] == "scenario_not_found"
 
 
 def test_choice_on_unknown_attempt_returns_404(client):
@@ -66,7 +66,7 @@ def test_choice_on_unknown_attempt_returns_404(client):
 def _start(client):
     employee_id = _create_employee(client)
     scenario_id = _create_scenario(client)
-    r = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id})
+    r = client.post("/attempts", json={"scenario_id": scenario_id})
     assert r.status_code == 201
     return r.json()
 
@@ -161,7 +161,7 @@ def test_timerless_node_has_null_deadline_and_rejects_null_choice(client, clock)
 
     employee_id = _create_employee(client)
     scenario_id = client.post("/scenarios", json={"title": "v2", "graph": V2_GRAPH}).json()["id"]
-    state = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id}).json()
+    state = client.post("/attempts", json={"scenario_id": scenario_id}).json()
 
     assert state["deadline"] is None
     assert state["node"]["timer_seconds"] is None

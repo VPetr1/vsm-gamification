@@ -45,7 +45,8 @@ class AttemptStateOut(BaseModel):
 
 
 class StartAttemptIn(BaseModel):
-    employee_id: str
+    """The player is taken from the session; an employee id in the body would be ignored."""
+
     scenario_id: str
 
 

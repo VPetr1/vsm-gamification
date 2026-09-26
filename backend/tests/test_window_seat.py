@@ -15,7 +15,7 @@ def play(client, clock):
     scenario_id = client.post("/scenarios", json=SCENARIO).json()["id"]
 
     def _play(*path):
-        state = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id}).json()
+        state = client.post("/attempts", json={"scenario_id": scenario_id}).json()
         for choice_id in path:
             if choice_id is TIMEOUT:
                 clock.advance(state["node"]["timer_seconds"])

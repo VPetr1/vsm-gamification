@@ -17,7 +17,8 @@ from sqlalchemy.orm import sessionmaker
 from app.core.db import get_db
 from app.db_upgrade import upgrade
 from app.main import app
-from app.models.models import ChoiceLog
+from app.core.security import hash_password
+from app.models.models import ChoiceLog, Employee
 from app.scenarios.library import load_scenario
 
 PG_URL = os.environ.get("TEST_DATABASE_URL", "")
@@ -44,16 +45,20 @@ def pg():
             db.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app), Session
+    with Session() as db:
+        db.add(Employee(login="race", password_hash=hash_password("pw"), full_name="Гонка", role="methodologist"))
+        db.commit()
+    client = TestClient(app)
+    assert client.post("/auth/login", json={"login": "race", "password": "pw"}).status_code == 200
+    yield client, Session
     app.dependency_overrides.clear()
     engine.dispose()
 
 
 def test_parallel_submits_for_one_step_apply_exactly_once(pg):
     client, Session = pg
-    employee_id = client.post("/employees", json={"full_name": "Синтетический Проводник"}).json()["id"]
     scenario_id = client.post("/scenarios", json=load_scenario("window_seat")).json()["id"]
-    attempt_id = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id}).json()["attempt_id"]
+    attempt_id = client.post("/attempts", json={"scenario_id": scenario_id}).json()["attempt_id"]
 
     workers = 8
     barrier = threading.Barrier(workers)

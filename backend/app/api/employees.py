@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.api.deps import methodologist
 from app.core.db import get_db
 from app.models.models import Employee
 
-router = APIRouter(prefix="/employees", tags=["employees"])
+# HR-style directory: methodologists only, conductors never see colleagues' records here.
+router = APIRouter(prefix="/employees", tags=["employees"], dependencies=[Depends(methodologist)])
 
 
 class EmployeeIn(BaseModel):

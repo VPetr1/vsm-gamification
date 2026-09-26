@@ -26,7 +26,7 @@ def _log_count(db, attempt_id):
 def test_repeated_submit_with_same_expected_step_applies_once(client, session_factory):
     employee_id = client.post("/employees", json={"full_name": "Синтетический Проводник"}).json()["id"]
     scenario_id = client.post("/scenarios", json={"title": "demo", "graph": DEMO_SCENARIO["graph"]}).json()["id"]
-    attempt_id = client.post("/attempts", json={"employee_id": employee_id, "scenario_id": scenario_id}).json()["attempt_id"]
+    attempt_id = client.post("/attempts", json={"scenario_id": scenario_id}).json()["attempt_id"]
 
     first = client.post(f"/attempts/{attempt_id}/choice", json={"choice_id": "c2", "expected_step": 0})
     second = client.post(f"/attempts/{attempt_id}/choice", json={"choice_id": "c2", "expected_step": 0})
@@ -57,7 +57,7 @@ def test_concurrent_winner_log_makes_loser_roll_back_entirely(session_factory, c
 
     with session_factory() as db:
         with pytest.raises(ScenarioError) as exc:
-            service.submit_choice(db, attempt_id, "c3", 0, clock.now)
+            service.submit_choice(db, attempt_id, employee_id, "c3", 0, clock.now)
         assert exc.value.code == "step_mismatch"
 
     with session_factory() as db:

@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.api.deps import current_user, methodologist
 from app.core.db import get_db
-from app.models.models import Scenario
+from app.models.models import Employee, Scenario
 from app.scenarios.validator import ScenarioValidationError, validate_graph
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
@@ -25,7 +26,9 @@ class ScenarioOut(BaseModel):
 
 
 @router.post("", response_model=ScenarioOut, status_code=201)
-def create_scenario(payload: ScenarioIn, db: Session = Depends(get_db)) -> Scenario:
+def create_scenario(
+    payload: ScenarioIn, db: Session = Depends(get_db), _: Employee = Depends(methodologist)
+) -> Scenario:
     try:
         validate_graph(payload.graph)
     except ScenarioValidationError as exc:
@@ -46,5 +49,5 @@ def create_scenario(payload: ScenarioIn, db: Session = Depends(get_db)) -> Scena
 
 
 @router.get("", response_model=list[ScenarioOut])
-def list_scenarios(db: Session = Depends(get_db)) -> list[Scenario]:
+def list_scenarios(db: Session = Depends(get_db), _: Employee = Depends(current_user)) -> list[Scenario]:
     return db.query(Scenario).all()
