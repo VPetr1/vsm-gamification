@@ -1,7 +1,7 @@
 import { ConditionBuilder } from "./ConditionBuilder";
 import type { Obj } from "./graphOps";
 
-export const MOODS = [
+const MOODS = [
   { id: "happy", title: "доволен" },
   { id: "calm", title: "спокоен" },
   { id: "worried", title: "встревожен" },
@@ -10,7 +10,7 @@ export const MOODS = [
   { id: "angry", title: "раздражён" },
 ];
 
-export const PROPS = [
+const PROPS = [
   { id: "suitcase", title: "чемодан в проходе" },
   { id: "spill", title: "пролитый напиток" },
 ];
