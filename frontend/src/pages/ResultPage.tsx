@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { getResult, startAttempt } from "../api/endpoints";
 import type { AttemptResult } from "../api/types";
-import { useSession } from "../auth/Session";
+import { useAuth } from "../auth/AuthContext";
 import { ErrorState, Loading } from "../components/States";
 import { formatDateTime, signed } from "../utils/time";
 
@@ -21,7 +21,7 @@ function Delta({ label, value }: { label: string; value: number }) {
 export function ResultPage() {
   const { attemptId = "" } = useParams();
   const navigate = useNavigate();
-  const { user } = useSession();
+  const { sessionLost } = useAuth();
   const [result, setResult] = useState<AttemptResult | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [restarting, setRestarting] = useState(false);
@@ -31,17 +31,18 @@ export function ResultPage() {
     getResult(attemptId)
       .then(setResult)
       .catch((err: unknown) => {
-        if (err instanceof ApiError && err.code === "attempt_not_finished") navigate(`/attempts/${attemptId}`, { replace: true });
+        if (err instanceof ApiError && err.status === 401) sessionLost();
+        else if (err instanceof ApiError && err.code === "attempt_not_finished") navigate(`/attempts/${attemptId}`, { replace: true });
         else setError(err instanceof ApiError ? err : new ApiError(0, "unknown", "Не удалось загрузить разбор"));
       });
   };
   useEffect(load, [attemptId]);
 
   const replay = async () => {
-    if (!result || !user) return;
+    if (!result) return;
     setRestarting(true);
     try {
-      const state = await startAttempt(user.id, result.scenario_id);
+      const state = await startAttempt(result.scenario_id);
       navigate(`/attempts/${state.attempt_id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err : null);

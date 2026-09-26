@@ -1,12 +1,19 @@
 import { api } from "./client";
-import type { AttemptResult, AttemptState, Employee, ScenarioSummary } from "./types";
+import type { AttemptResult, AttemptState, DemoAccount, Me, ScenarioSummary } from "./types";
 
-export const listEmployees = () => api<Employee[]>("/employees");
+export const demoAccounts = () => api<DemoAccount[]>("/auth/demo-accounts");
+
+export const signIn = (login: string, password: string) =>
+  api<Me>("/auth/login", { method: "POST", body: { login, password } });
+
+export const signOut = () => api<void>("/auth/logout", { method: "POST" });
+
+export const me = () => api<Me>("/auth/me");
 
 export const listScenarios = () => api<ScenarioSummary[]>("/scenarios");
 
-export const startAttempt = (employeeId: string, scenarioId: string) =>
-  api<AttemptState>("/attempts", { method: "POST", body: { employee_id: employeeId, scenario_id: scenarioId } });
+export const startAttempt = (scenarioId: string) =>
+  api<AttemptState>("/attempts", { method: "POST", body: { scenario_id: scenarioId } });
 
 export const getAttempt = (attemptId: string) => api<AttemptState>(`/attempts/${encodeURIComponent(attemptId)}`);
 

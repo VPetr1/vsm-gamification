@@ -1,8 +1,20 @@
-export type Employee = {
+export type Role = "conductor" | "methodologist";
+
+export type Me = {
   id: string;
+  login: string | null;
   full_name: string;
-  depot: string;
+  role: Role;
   brigade: string;
+  depot: string;
+};
+
+export type DemoAccount = {
+  login: string;
+  full_name: string;
+  role: Role;
+  brigade: string;
+  depot: string;
 };
 
 export type ScenarioSummary = {

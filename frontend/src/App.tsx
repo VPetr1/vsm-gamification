@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { SessionProvider, useSession } from "./auth/Session";
+import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { CatalogPage } from "./pages/CatalogPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { PlayPage } from "./pages/PlayPage";
 import { ResultPage } from "./pages/ResultPage";
+import { Loading } from "./components/States";
 
 function RequireUser({ children }: { children: ReactNode }) {
-  const { user } = useSession();
+  const { user, checking } = useAuth();
   const location = useLocation();
+  if (checking) return <Loading label="Проверяем вход…" />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }
@@ -28,7 +30,7 @@ function NotFound() {
 
 export function App() {
   return (
-    <SessionProvider>
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -47,6 +49,6 @@ export function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-    </SessionProvider>
+    </AuthProvider>
   );
 }

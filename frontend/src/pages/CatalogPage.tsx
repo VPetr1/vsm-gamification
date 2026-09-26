@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { listScenarios, startAttempt } from "../api/endpoints";
 import type { ScenarioSummary } from "../api/types";
-import { useSession } from "../auth/Session";
+import { useAuth } from "../auth/AuthContext";
 import { Empty, ErrorState, Loading } from "../components/States";
 
 export function CatalogPage() {
-  const { user } = useSession();
+  const { sessionLost } = useAuth();
   const navigate = useNavigate();
   const [scenarios, setScenarios] = useState<ScenarioSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -17,18 +17,22 @@ export function CatalogPage() {
     setError(null);
     listScenarios()
       .then(setScenarios)
-      .catch((err: unknown) => setError(err instanceof ApiError ? err.message : "Не удалось загрузить сценарии"));
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 401) sessionLost();
+        else setError(err instanceof ApiError ? err.message : "Не удалось загрузить сценарии");
+      });
   };
   useEffect(load, []);
 
   const start = async (scenarioId: string) => {
-    if (!user || starting) return;
+    if (starting) return;
     setStarting(scenarioId);
     setError(null);
     try {
-      const state = await startAttempt(user.id, scenarioId);
+      const state = await startAttempt(scenarioId);
       navigate(`/attempts/${state.attempt_id}`);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) return sessionLost();
       setError(err instanceof ApiError ? err.message : "Не удалось начать сценарий");
       setStarting(null);
     }

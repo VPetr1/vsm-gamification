@@ -1,8 +1,8 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useSession } from "../auth/Session";
+import { useAuth } from "../auth/AuthContext";
 
 export function Layout() {
-  const { user, signOut } = useSession();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   return (
     <div className="app">
@@ -23,13 +23,15 @@ export function Layout() {
           </nav>
           {user && (
             <div className="user-box">
-              <span className="user-name">{user.full_name}</span>
+              <span className="user-name">
+                {user.full_name}
+                <span className="role-tag">{user.role === "methodologist" ? "методист" : "проводник"}</span>
+              </span>
               <button
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => {
-                  signOut();
-                  navigate("/login");
+                  void signOut().finally(() => navigate("/login"));
                 }}
               >
                 Выйти
