@@ -73,7 +73,8 @@ def start_attempt(db: Session, employee_id: str, scenario_id: str, now: datetime
     if db.get(Employee, employee_id) is None:
         raise ScenarioError("employee_not_found", "employee not found")
     scenario = db.get(Scenario, scenario_id)
-    if scenario is None:
+    if scenario is None or scenario.version < 1 or scenario.graph is None:
+        # Drafts that were never published cannot be played.
         raise ScenarioError("scenario_not_found", "scenario not found")
 
     snapshot = copy.deepcopy(scenario.graph)
@@ -82,6 +83,7 @@ def start_attempt(db: Session, employee_id: str, scenario_id: str, now: datetime
         employee_id=employee_id,
         scenario_id=scenario.id,
         scenario_version=scenario.version,
+        scenario_title=scenario.title,
         graph_snapshot=snapshot,
         current_node="",
     )

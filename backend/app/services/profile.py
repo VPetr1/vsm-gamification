@@ -89,7 +89,7 @@ def history(db: Session, user: Employee) -> list[dict]:
             {
                 "attempt_id": attempt.id,
                 "scenario_id": attempt.scenario_id,
-                "scenario_title": title,
+                "scenario_title": attempt.scenario_title or title,
                 "scenario_version": attempt.scenario_version,
                 "status": attempt.status.value,
                 "started_at": attempt.started_at,

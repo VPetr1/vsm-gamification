@@ -3,7 +3,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from datetime import datetime
+
 from app.api.deps import current_user, methodologist
+from app.core.clock import current_time
 from app.core.db import get_db
 from app.models.models import Attempt, AttemptStatus, Employee, Scenario, ScenarioBest
 from app.scenarios.validator import ScenarioValidationError, validate_graph
@@ -30,7 +33,10 @@ class ScenarioOut(BaseModel):
 
 @router.post("", response_model=ScenarioOut, status_code=201)
 def create_scenario(
-    payload: ScenarioIn, db: Session = Depends(get_db), _: Employee = Depends(methodologist)
+    payload: ScenarioIn,
+    db: Session = Depends(get_db),
+    _: Employee = Depends(methodologist),
+    now: datetime = Depends(current_time),
 ) -> Scenario:
     try:
         validate_graph(payload.graph)
@@ -45,7 +51,15 @@ def create_scenario(
         ) from exc
 
     tags = [t.strip() for t in payload.tags if t.strip()][:12]
-    scenario = Scenario(title=payload.title, description=payload.description, tags=tags, graph=payload.graph)
+    scenario = Scenario(
+        title=payload.title,
+        description=payload.description,
+        tags=tags,
+        graph=payload.graph,
+        origin="api",
+        published_at=now,
+        updated_at=now,
+    )
     db.add(scenario)
     db.commit()
     db.refresh(scenario)

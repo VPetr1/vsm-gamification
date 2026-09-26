@@ -55,7 +55,7 @@ def _state_out(view: service.AttemptView, now: datetime) -> AttemptStateOut:
     return AttemptStateOut(
         attempt_id=attempt.id,
         scenario_id=attempt.scenario_id,
-        scenario_title=attempt.scenario.title,
+        scenario_title=attempt.scenario_title or attempt.scenario.title,
         scenario_version=attempt.scenario_version,
         loyalty=attempt.loyalty,
         safety=attempt.safety,
@@ -153,7 +153,7 @@ def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
     return AttemptResultOut(
         attempt_id=attempt.id,
         scenario_id=attempt.scenario_id,
-        scenario_title=attempt.scenario.title,
+        scenario_title=attempt.scenario_title or attempt.scenario.title,
         scenario_version=attempt.scenario_version,
         status=attempt.status.value,
         started_at=as_utc(attempt.started_at),

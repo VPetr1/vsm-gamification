@@ -8,7 +8,8 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 
 def load_scenario(name: str) -> dict:
     with open(DATA_DIR / f"{name}.json", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    return {**data, "key": name}
 
 
 def builtin_scenarios() -> list[dict]:

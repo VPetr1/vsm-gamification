@@ -86,25 +86,40 @@ def seed_accounts(db: Session, password: str) -> None:
             employee.password_hash = hash_password(password)
 
 
-def seed(db: Session) -> None:
-    scenarios = builtin_scenarios()
-    for data in scenarios:
+def seed_scenarios(db: Session, now: datetime) -> None:
+    """Bundled scenarios are matched by key. Once a methodologist publishes one from the editor
+    (origin = "editor"), the seed no longer overwrites it, so a restart never reverts their work."""
+    for data in builtin_scenarios():
         validate_graph(data["graph"])
-
-    for data in scenarios:
-        existing = db.query(Scenario).filter_by(title=data["title"]).first()
+        existing = db.scalars(select(Scenario).where(Scenario.key == data["key"])).first()
+        if existing is None:
+            # Databases seeded before keys existed: claim the row by title.
+            existing = db.scalars(select(Scenario).where(Scenario.key.is_(None), Scenario.title == data["title"])).first()
+            if existing is not None:
+                existing.key = data["key"]
+                if existing.origin != "editor":
+                    existing.origin = "builtin"
         tags = data.get("tags", [])
         if existing is None:
-            db.add(Scenario(title=data["title"], description=data["description"], tags=tags, graph=data["graph"]))
-        elif existing.graph != data["graph"] or existing.description != data["description"] or existing.tags != tags:
+            db.add(Scenario(key=data["key"], origin="builtin", title=data["title"], description=data["description"],
+                            tags=tags, graph=data["graph"], version=1, published_at=now, updated_at=now))
+        elif existing.origin == "builtin" and (
+            existing.graph != data["graph"] or existing.description != data["description"]
+            or existing.tags != tags or existing.title != data["title"]
+        ):
+            existing.title, existing.description, existing.tags = data["title"], data["description"], tags
             existing.graph = data["graph"]
-            existing.description = data["description"]
-            existing.tags = tags
             existing.version += 1
+            existing.published_at = existing.updated_at = now
+
+
+def seed(db: Session) -> None:
+    now = utcnow()
+    seed_scenarios(db, now)
 
     seed_accounts(db, settings.demo_password)
     db.commit()
-    seed_synthetic_results(db, utcnow())
+    seed_synthetic_results(db, now)
 
 
 def run() -> None:
