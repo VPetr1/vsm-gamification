@@ -26,17 +26,23 @@ from app.schemas.schemas import (
     SubmitChoiceIn,
 )
 from app.scenarios.engine import DEFAULT_INITIAL, visible_choices
+from app.scenarios.visual import resolve as resolve_visual
 from app.services import attempts as service
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 
 
 def _node_out(node_id: str, node: dict, attempt) -> NodeOut:
-    # Only ids and texts are exposed: effects, conditions and next nodes stay on the server.
+    # Only ids, texts and resolved visuals are exposed: effects, conditions and next nodes stay on the server.
+    visual = resolve_visual(attempt.graph_snapshot, node, attempt)
     if node.get("is_ending"):
-        return NodeOut(node_id=node_id, text=node["text"], is_ending=True, ending_summary=node["ending_summary"])
+        return NodeOut(
+            node_id=node_id, text=node["text"], is_ending=True, ending_summary=node["ending_summary"], visual=visual
+        )
     choices = [ChoiceOut(id=c["id"], text=c["text"]) for c in visible_choices(node, attempt)]
-    return NodeOut(node_id=node_id, text=node["text"], timer_seconds=node.get("timer_seconds"), choices=choices)
+    return NodeOut(
+        node_id=node_id, text=node["text"], timer_seconds=node.get("timer_seconds"), choices=choices, visual=visual
+    )
 
 
 def _last_step_out(log: ChoiceLog) -> LastStepOut:

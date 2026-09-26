@@ -8,16 +8,19 @@ from collections import deque
 
 from app.gamification.competencies import COMPETENCIES, MAX_POINTS
 from app.gamification.rules import ACHIEVEMENTS
+from app.scenarios import visual as vis
 from app.scenarios.conditions import LEGACY_MIN, OPERATORS, SCALES
 
 TIMER_MIN, TIMER_MAX = 5, 600
 EFFECT_LIMIT = 100
 MAX_CONDITION_DEPTH = 8
 
-GRAPH_KEYS = {"start_node", "nodes", "initial", "flags", "awards"}
+GRAPH_KEYS = {"start_node", "nodes", "initial", "flags", "awards", "visual"}
+CHARACTER_KEYS = {"name", "figure", "pose", "position"}
+NODE_VISUAL_KEYS = {"speaker", "moods", "props"}
 AWARD_KEYS = {"achievement", "when"}
-STEP_NODE_KEYS = {"text", "is_ending", "timer_seconds", "timeout", "choices", "debrief"}
-ENDING_NODE_KEYS = {"text", "is_ending", "ending_summary", "outcome"}
+STEP_NODE_KEYS = {"text", "is_ending", "timer_seconds", "timeout", "choices", "debrief", "visual"}
+ENDING_NODE_KEYS = {"text", "is_ending", "ending_summary", "outcome", "visual"}
 OUTCOME_KEYS = {"effects", "set_flags", "next_node", "transitions", "explanation", "assessment"}
 CHOICE_KEYS = OUTCOME_KEYS | {"id", "text", "condition"}
 TRANSITION_KEYS = {"condition", "next_node"}
@@ -73,6 +76,8 @@ class _Checker:
         self.check_initial(graph.get("initial"))
         self.check_flags(graph.get("flags"))
         self.check_awards(graph.get("awards"))
+        self.characters: set[str] = set()
+        self.check_characters(graph.get("visual"))
 
         nodes = graph.get("nodes")
         if not isinstance(nodes, dict) or not nodes:
@@ -136,12 +141,68 @@ class _Checker:
             else:
                 self.check_condition(award["when"], f"{path}.when", depth=0)
 
+    def check_characters(self, visual) -> None:
+        if visual is None:
+            return
+        if not isinstance(visual, dict):
+            self.error("graph.visual", "must be an object")
+            return
+        self.unknown_keys(visual, {"characters"}, "graph.visual")
+        characters = visual.get("characters", {})
+        if not isinstance(characters, dict):
+            self.error("graph.visual.characters", "must be an object of id -> character")
+            return
+        allowed = {"figure": vis.FIGURES, "pose": vis.POSES, "position": vis.POSITIONS}
+        for cid, c in characters.items():
+            path = f"graph.visual.characters.{cid}"
+            if not isinstance(c, dict):
+                self.error(path, "must be an object")
+                continue
+            self.unknown_keys(c, CHARACTER_KEYS, path)
+            if "name" in c and not isinstance(c["name"], str):
+                self.error(f"{path}.name", "must be a string")
+            for key, values in allowed.items():
+                if key in c and c[key] not in values:
+                    self.error(f"{path}.{key}", f"must be one of {sorted(values)}")
+        self.characters = set(characters)
+
+    def check_node_visual(self, visual, path: str) -> None:
+        if not isinstance(visual, dict):
+            self.error(path, "must be an object")
+            return
+        self.unknown_keys(visual, NODE_VISUAL_KEYS, path)
+        if "speaker" in visual and visual["speaker"] not in self.characters:
+            self.error(f"{path}.speaker", "must be a character declared in graph.visual.characters")
+        for key, id_key, allowed in (("moods", "character", None), ("props", "id", vis.PROPS)):
+            rules = visual.get(key, [])
+            if not isinstance(rules, list):
+                self.error(f"{path}.{key}", "must be a list")
+                continue
+            for i, rule in enumerate(rules):
+                rpath = f"{path}.{key}[{i}]"
+                if not isinstance(rule, dict):
+                    self.error(rpath, "must be an object")
+                    continue
+                self.unknown_keys(rule, {id_key, "when"} | ({"mood"} if key == "moods" else set()), rpath)
+                if key == "moods":
+                    if rule.get("character") not in self.characters:
+                        self.error(f"{rpath}.character", "must be a declared character")
+                    if rule.get("mood") not in vis.MOODS:
+                        self.error(f"{rpath}.mood", f"must be one of {sorted(vis.MOODS)}")
+                elif rule.get("id") not in allowed:
+                    self.error(f"{rpath}.id", f"must be one of {sorted(allowed)}")
+                if "when" in rule:
+                    self.check_condition(rule["when"], f"{rpath}.when", depth=0)
+
     def check_node(self, node, path: str) -> None:
         if not isinstance(node, dict):
             self.error(path, "must be an object")
             return
         if not _is_text(node.get("text")):
             self.error(f"{path}.text", "must be a non-empty string")
+
+        if "visual" in node:
+            self.check_node_visual(node["visual"], f"{path}.visual")
 
         is_ending = node.get("is_ending", False)
         if not isinstance(is_ending, bool):

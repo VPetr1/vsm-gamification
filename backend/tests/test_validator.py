@@ -227,3 +227,15 @@ def test_assessment_uses_known_competencies_and_bounded_points():
     err = errors_for(g)
     assert "choices[0].assessment.charisma: unknown competency" in err
     assert "choices[0].assessment.safety: must be an integer 0..10" in err
+
+
+def test_visual_metadata_is_validated():
+    g = graph(visual={"characters": {"man": {"name": "Пассажир", "figure": "robot", "pose": "sitting"}}})
+    g["nodes"]["talk"]["visual"] = {"speaker": "ghost", "moods": [{"character": "man", "mood": "furious"}],
+                                   "props": [{"id": "piano", "when": {"flag": "nope"}}]}
+    err = errors_for(g)
+    assert "graph.visual.characters.man.figure: must be one of" in err
+    assert "nodes.talk.visual.speaker: must be a character declared" in err
+    assert "nodes.talk.visual.moods[0].mood: must be one of" in err
+    assert "nodes.talk.visual.props[0].id: must be one of" in err
+    assert "nodes.talk.visual.props[0].when.flag: unknown flag 'nope'" in err

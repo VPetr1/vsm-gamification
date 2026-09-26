@@ -184,3 +184,26 @@ def test_result_explains_each_decision(client, play):
     assert [s["choice_id"] for s in steps] == ["calm", "stow_together", "check", "tactful", "escort"]
     assert all(s["explanation"] and s["lesson"] for s in steps)
     assert steps[1]["situation"].startswith("Поезд набирает скорость")
+
+
+def test_scene_visuals_are_resolved_on_the_server(play):
+    start = play()
+    visual = start["node"]["visual"]
+    assert visual["speaker"] == "woman"
+    assert {c["id"]: c["mood"] for c in visual["characters"]} == {"man": "calm", "woman": "upset"}
+    assert visual["props"] == ["suitcase"]
+    assert "when" not in str(visual)
+
+    cleared = play("calm", "stow_together")
+    assert cleared["node"]["visual"]["props"] == []
+
+    rude = play("order", "stow_together")
+    assert {c["id"]: c["mood"] for c in rude["node"]["visual"]["characters"]}["man"] == "angry"
+
+
+def test_scenario_without_visuals_still_renders(client, clock):
+    graph = {"start_node": "a", "nodes": {"a": {"text": "x", "choices": [{"id": "c", "text": "x", "next_node": "e"}]},
+                                          "e": {"text": "x", "is_ending": True, "ending_summary": "x"}}}
+    sid = client.post("/scenarios", json={"title": "Без визуала", "graph": graph}).json()["id"]
+    state = client.post("/attempts", json={"scenario_id": sid}).json()
+    assert state["node"]["visual"] is None
