@@ -36,10 +36,12 @@ DEMO_ACCOUNTS = [
 # Pre-played paths for synthetic colleagues; None means "let the timer run out".
 SYNTHETIC_RESULTS = {
     "sergeev": [("Место у окна", ["calm", "stow_together", "check", "tactful", "escort"]),
-                ("Конфликт из-за откинутого кресла", ["c1"])],
+                ("Конфликт из-за откинутого кресла", ["c1"]),
+                ("Пассажиру стало плохо", ["approach", "call_senior", "stay_calm", "assist", "prepare_exit"])],
     "orlova": [("Место у окна", ["order", "stow_together", "check", "tactful", "escort"]),
                ("Конфликт из-за откинутого кресла", ["c2"])],
-    "kim": [("Место у окна", ["ignore", "call_senior"]), ("Конфликт из-за откинутого кресла", [None])],
+    "kim": [("Место у окна", ["ignore", "call_senior"]), ("Конфликт из-за откинутого кресла", [None]),
+            ("Пассажиру стало плохо", ["approach", "own_meds", "leave_neighbor", "hand_over"])],
     "belova": [("Место у окна", ["calm", "stow_yourself", "reseat_girl", "check_now", "tactful", "send_alone"])],
     "nazarov": [("Место у окна", ["calm", None, "call_colleague", "check", "tactful", "escort"]),
                 ("Конфликт из-за откинутого кресла", ["c1"])],
