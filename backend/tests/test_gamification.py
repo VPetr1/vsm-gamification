@@ -160,7 +160,7 @@ def test_history_and_catalog_show_own_progress(login_as, publish, clock):
 
     history = anna.get("/me/attempts").json()
     assert [h["status"] for h in history] == ["in_progress", "finished"]
-    assert history[1]["score"] == 58 and history[1]["outcome"] is None and history[1]["xp_gained"] == 58
+    assert history[1]["score"] == 58 and history[1]["outcome"] == "calm_resolution" and history[1]["xp_gained"] == 58
 
     catalog = anna.get("/scenarios").json()
     assert catalog[0]["my_best_score"] == 58
