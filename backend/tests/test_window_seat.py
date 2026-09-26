@@ -64,11 +64,20 @@ def test_rudeness_earlier_turns_the_same_resolution_into_dissatisfaction(play):
 
 
 def test_loyalty_threshold_alone_decides_the_ending(play):
-    # No negative flags on either path; the final loyalty is 65 vs 70 around the ">= 70" threshold.
-    below = play("calm", "stow_together", "check", "public", "send_alone")
-    at = play("calm", "stow_together", "check", "public", "escort")
+    # No negative flags on either path (reseating lowers loyalty but sets none); the final
+    # loyalty is 65 vs 70 around the ">= 70" threshold.
+    path = ("calm", "stow_yourself", "reseat_girl", "check_now", "tactful")
+    below = play(*path, "send_alone")
+    at = play(*path, "escort")
     assert (below["loyalty"], below["node"]["node_id"]) == (65, "end_dissatisfied")
     assert (at["loyalty"], at["node"]["node_id"]) == (70, "end_calm")
+
+
+def test_public_humiliation_spoils_the_ending_even_with_high_scales(play):
+    # Consistent with its explanation: the offence stays, whatever happens afterwards.
+    state = play("calm", "stow_together", "check", "public", "escort")
+    assert (state["loyalty"], state["safety"]) == (70, 95)
+    assert state["node"]["node_id"] == "end_dissatisfied"
 
 
 def test_escalation_ending_and_asking_for_help_costs_nothing(client, play):
