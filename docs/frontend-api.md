@@ -26,6 +26,8 @@
 | `choice_required` | 422 | `choice_id: null` на шаге без таймера |
 | `invalid_scenario` | 422 | граф не прошёл проверку; в ответе список `errors` с путями |
 | `bad_scope` | 422 | неизвестный уровень рейтинга |
+| `too_many_attempts` | 429 | логин временно заблокирован после неверных паролей; в ответе `retry_after` (секунды) |
+| `bad_api_key` / `integration_disabled` | 401 / 503 | интеграционный API: неверный ключ / ключ не задан |
 
 ## Правила экрана прохождения
 
@@ -1139,7 +1141,24 @@ POST /api/editor/scenarios/b6d92e24-9a2d-4c0d-a2eb-c41d5b81bd5d/publish
 }
 ```
 
-## 10. Прочее
+## 10. Интеграция с HR/LMS
+
+Отдельный доступ по ключу, без пользовательской сессии: заголовок `X-API-Key` равен `INTEGRATION_API_KEY` (пустое значение
+выключает API, ответ 503). Только чтение.
+
+- `GET /api/integrations/progress` — по каждому проводнику: `employee_id`, имя, бригада, депо, `synthetic`, `xp`, `level`,
+  `competencies` (`id`, `earned`, `max`, `percent` — `null` значит «нет данных»), `weakest_competency`, `achievements`,
+  `last_finished_at`.
+- `GET /api/integrations/attempts?finished_after=<ISO>&limit=500` — завершённые попытки по возрастанию `finished_at`:
+  `attempt_id`, `employee_id`, сценарий и версия, `outcome`, `score`, `xp_gained`, `competencies`. Для инкрементальной
+  выгрузки передавайте `finished_at` последней полученной записи.
+
+```http
+GET /api/integrations/attempts?finished_after=2026-09-26T10:00:00Z
+X-API-Key: <ключ>
+```
+
+## 11. Прочее
 
 - `POST /auth/logout` → 204, cookie удаляется, сессия в БД стирается.
 - `GET /auth/me` — текущий пользователь.
