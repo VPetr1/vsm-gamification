@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { NotificationsBell } from "./NotificationsBell";
 
 export function Layout() {
   const { user, signOut } = useAuth();
@@ -20,9 +21,13 @@ export function Layout() {
               Главная
             </NavLink>
             <NavLink to="/scenarios">Сценарии</NavLink>
+            <NavLink to="/profile">Профиль</NavLink>
+            <NavLink to="/leaderboard">Рейтинг</NavLink>
+            {user?.role === "methodologist" && <NavLink to="/editor">Редактор</NavLink>}
           </nav>
           {user && (
             <div className="user-box">
+              <NotificationsBell />
               <span className="user-name">
                 {user.full_name}
                 <span className="role-tag">{user.role === "methodologist" ? "методист" : "проводник"}</span>
