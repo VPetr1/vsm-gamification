@@ -5,7 +5,6 @@ only once (row lock + UNIQUE(attempt_id, step)), so rewards are granted exactly 
 the attempt ended by a choice, by a timeout, or by a timeout resolved on restore.
 """
 
-from dataclasses import dataclass, field
 from datetime import datetime
 
 from sqlalchemy import func, select
@@ -14,14 +13,6 @@ from sqlalchemy.orm import Session
 from app.gamification.rules import ACHIEVEMENTS, attempt_score, level_for
 from app.models.models import Attempt, Employee, EmployeeAchievement, Notification, ScenarioBest
 from app.scenarios.conditions import evaluate
-
-
-@dataclass
-class RewardSummary:
-    score: int
-    xp_gained: int
-    level_up: bool
-    achievements: list[str] = field(default_factory=list)
 
 
 def total_xp(db: Session, employee_id: str) -> int:
@@ -34,7 +25,7 @@ def _notify(db: Session, employee_id: str, kind: str, title: str, body: str, lin
     db.add(Notification(employee_id=employee_id, kind=kind, title=title, body=body, link=link, created_at=now))
 
 
-def apply_rewards(db: Session, attempt: Attempt, now: datetime) -> RewardSummary:
+def apply_rewards(db: Session, attempt: Attempt, now: datetime) -> None:
     # Serialise reward updates per employee, so two attempts finishing at once cannot both
     # claim the same improvement or the same achievement.
     db.execute(select(Employee.id).where(Employee.id == attempt.employee_id).with_for_update())
@@ -82,6 +73,3 @@ def apply_rewards(db: Session, attempt: Attempt, now: datetime) -> RewardSummary
         achievement = ACHIEVEMENTS[achievement_id]
         _notify(db, attempt.employee_id, "achievement", f"Достижение «{achievement.title}»",
                 achievement.description, f"/attempts/{attempt.id}/result", now)
-
-    return RewardSummary(score=score, xp_gained=gained, level_up=level_after.number > level_before.number,
-                         achievements=new)

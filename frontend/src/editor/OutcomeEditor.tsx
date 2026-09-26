@@ -1,7 +1,7 @@
 import { ConditionBuilder } from "./ConditionBuilder";
 import type { Json, Obj } from "./graphOps";
 
-export const COMPETENCIES = [
+const COMPETENCIES = [
   { id: "communication", title: "Коммуникация" },
   { id: "safety", title: "Безопасность" },
   { id: "first_aid", title: "Первая помощь" },

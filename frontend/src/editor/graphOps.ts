@@ -3,7 +3,6 @@
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type Obj = { [key: string]: Json };
 
-export type ClauseField = { kind: "flag"; flag: string } | { kind: "scale"; scale: "loyalty" | "safety" };
 export type Clause =
   | { kind: "flag"; flag: string; negate: boolean }
   | { kind: "scale"; scale: "loyalty" | "safety"; op: string; value: number };

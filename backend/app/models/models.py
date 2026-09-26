@@ -49,7 +49,6 @@ class Employee(Base):
     failed_logins: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    attempts: Mapped[list["Attempt"]] = relationship(back_populates="employee")
 
 
 class Scenario(Base):
@@ -76,7 +75,6 @@ class Scenario(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    attempts: Mapped[list["Attempt"]] = relationship(back_populates="scenario")
 
 
 class AttemptStatus(str, enum.Enum):
@@ -115,9 +113,7 @@ class Attempt(Base):
     xp_gained: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
-    employee: Mapped[Employee] = relationship(back_populates="attempts")
-    scenario: Mapped[Scenario] = relationship(back_populates="attempts")
-    logs: Mapped[list["ChoiceLog"]] = relationship(back_populates="attempt", order_by="ChoiceLog.step")
+    scenario: Mapped[Scenario] = relationship()
 
 
 class ChoiceLog(Base):
@@ -139,8 +135,6 @@ class ChoiceLog(Base):
     safety_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
     assessment: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-
-    attempt: Mapped[Attempt] = relationship(back_populates="logs")
 
 
 class AuthSession(Base):
