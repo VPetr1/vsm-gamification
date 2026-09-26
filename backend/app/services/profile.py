@@ -47,7 +47,7 @@ def achievements_view(db: Session, employee_id: str) -> list[dict]:
 
 
 def published_scenarios(db: Session) -> list[Scenario]:
-    return list(db.scalars(select(Scenario).where(Scenario.version > 0).order_by(Scenario.created_at)))
+    return list(db.scalars(select(Scenario).where(Scenario.version > 0).order_by(Scenario.created_at, Scenario.title)))
 
 
 def profile(db: Session, user: Employee) -> dict:
