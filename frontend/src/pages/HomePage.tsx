@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { useSession } from "../auth/Session";
+import { useAuth } from "../auth/AuthContext";
 
 export function HomePage() {
-  const { user } = useSession();
+  const { user } = useAuth();
   return (
     <section className="stack">
       <h1>Здравствуйте, {user?.full_name}</h1>

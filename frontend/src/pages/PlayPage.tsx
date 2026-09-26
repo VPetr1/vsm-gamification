@@ -1,5 +1,6 @@
-import { useCallback, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import { ScaleBar } from "../components/ScaleBar";
 import { ErrorState, Loading } from "../components/States";
 import { useAttemptPlay } from "../hooks/useAttemptPlay";
@@ -9,9 +10,8 @@ import { formatSeconds, signed } from "../utils/time";
 
 export function PlayPage() {
   const { attemptId = "" } = useParams();
-  const navigate = useNavigate();
-  const onUnauthorized = useCallback(() => navigate("/login", { replace: true }), [navigate]);
-  const play = useAttemptPlay(attemptId, onUnauthorized);
+  const { sessionLost } = useAuth();
+  const play = useAttemptPlay(attemptId, sessionLost);
   const { state, pending, choose } = play;
 
   useEffect(() => {
