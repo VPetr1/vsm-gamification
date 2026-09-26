@@ -219,3 +219,11 @@ def test_awards_reference_known_achievements_and_valid_conditions():
     assert "graph.awards[1].when: a condition is required" in err
     assert "graph.awards[2].when.flag: unknown flag 'nope'" in err
     assert collect_errors(graph(awards=[{"achievement": "diplomat", "when": {"not": {"flag": "was_rude"}}}])) == []
+
+
+def test_assessment_uses_known_competencies_and_bounded_points():
+    g = graph()
+    g["nodes"]["talk"]["choices"][0]["assessment"] = {"communication": 2, "charisma": 1, "safety": 11}
+    err = errors_for(g)
+    assert "choices[0].assessment.charisma: unknown competency" in err
+    assert "choices[0].assessment.safety: must be an integer 0..10" in err

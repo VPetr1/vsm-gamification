@@ -13,7 +13,8 @@ router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
 class ScenarioIn(BaseModel):
     title: str = Field(min_length=1, max_length=300)
-    description: str = ""
+    description: str = Field(default="", max_length=2000)
+    tags: list[str] = Field(default_factory=list, max_length=12)
     graph: dict
 
 
@@ -21,6 +22,7 @@ class ScenarioOut(BaseModel):
     id: str
     title: str
     description: str
+    tags: list[str]
     version: int
 
     model_config = {"from_attributes": True}
@@ -42,7 +44,8 @@ def create_scenario(
             },
         ) from exc
 
-    scenario = Scenario(title=payload.title, description=payload.description, graph=payload.graph)
+    tags = [t.strip() for t in payload.tags if t.strip()][:12]
+    scenario = Scenario(title=payload.title, description=payload.description, tags=tags, graph=payload.graph)
     db.add(scenario)
     db.commit()
     db.refresh(scenario)
@@ -73,6 +76,7 @@ def list_scenarios(db: Session = Depends(get_db), user: Employee = Depends(curre
             id=s.id,
             title=s.title,
             description=s.description,
+            tags=s.tags or [],
             version=s.version,
             my_best_score=bests.get(s.id),
             in_progress_attempt_id=in_progress.get(s.id),

@@ -17,6 +17,7 @@ from app.models.models import (
     ScenarioBest,
 )
 from app.scenarios.errors import ScenarioError
+from app.services.competency import competency_profile, competency_view as _competency_view
 from app.services.rewards import total_xp
 
 SCOPES = ("brigade", "depot", "company")
@@ -70,6 +71,7 @@ def profile(db: Session, user: Employee) -> dict:
             "scenarios_completed": completed,
             "scenarios_published": len(published_scenarios(db)),
         },
+        **competency_profile(db, user),
     }
 
 
@@ -96,6 +98,13 @@ def history(db: Session, user: Employee) -> list[dict]:
                 "xp_gained": attempt.xp_gained,
                 "outcome": ending.get("outcome") if attempt.status == AttemptStatus.finished else None,
                 "synthetic": attempt.is_synthetic,
+                "competencies": [
+                    {"id": c["id"], "title": c["title"], "earned": c["earned"], "max": c["max"], "percent": c["percent"]}
+                    for c in _competency_view(attempt.assessment or {})
+                    if c["percent"] is not None
+                ]
+                if attempt.status == AttemptStatus.finished
+                else [],
             }
         )
     return items

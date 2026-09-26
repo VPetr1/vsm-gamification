@@ -62,6 +62,7 @@ def test_result_lists_decisions_with_actual_deltas_and_explanations(client, cloc
         "safety_after": 50,
         "explanation": "Помощь ценят.",
         "lesson": "Лучше всего сразу помочь.",
+        "assessment": [],
     }
     assert second["timed_out"] is True
     assert second["choice_id"] is None and second["choice_text"] is None

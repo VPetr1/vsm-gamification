@@ -6,6 +6,7 @@ e.g. "nodes.n1.choices[0].effects.loyalty: must be an integer -100..100".
 
 from collections import deque
 
+from app.gamification.competencies import COMPETENCIES, MAX_POINTS
 from app.gamification.rules import ACHIEVEMENTS
 from app.scenarios.conditions import LEGACY_MIN, OPERATORS, SCALES
 
@@ -17,7 +18,7 @@ GRAPH_KEYS = {"start_node", "nodes", "initial", "flags", "awards"}
 AWARD_KEYS = {"achievement", "when"}
 STEP_NODE_KEYS = {"text", "is_ending", "timer_seconds", "timeout", "choices", "debrief"}
 ENDING_NODE_KEYS = {"text", "is_ending", "ending_summary", "outcome"}
-OUTCOME_KEYS = {"effects", "set_flags", "next_node", "transitions", "explanation"}
+OUTCOME_KEYS = {"effects", "set_flags", "next_node", "transitions", "explanation", "assessment"}
 CHOICE_KEYS = OUTCOME_KEYS | {"id", "text", "condition"}
 TRANSITION_KEYS = {"condition", "next_node"}
 
@@ -221,6 +222,16 @@ class _Checker:
                     self.error(f"{path}.set_flags.{name}", "unknown flag (declare it in graph.flags)")
                 if not isinstance(value, bool):
                     self.error(f"{path}.set_flags.{name}", "must be true or false")
+
+        assessment = outcome.get("assessment", {})
+        if not isinstance(assessment, dict):
+            self.error(f"{path}.assessment", "must be an object of competency -> points")
+        else:
+            for competency, points in assessment.items():
+                if competency not in COMPETENCIES:
+                    self.error(f"{path}.assessment.{competency}", f"unknown competency; use one of {sorted(COMPETENCIES)}")
+                elif not (_is_int(points) and 0 <= points <= MAX_POINTS):
+                    self.error(f"{path}.assessment.{competency}", f"must be an integer 0..{MAX_POINTS}")
 
         if "explanation" in outcome and not _is_text(outcome["explanation"]):
             self.error(f"{path}.explanation", "must be a non-empty string")

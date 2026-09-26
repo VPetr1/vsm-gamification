@@ -8,7 +8,9 @@ from app.core.clock import as_utc, current_time
 from app.core.db import get_db
 from sqlalchemy import select
 
+from app.gamification.competencies import COMPETENCIES
 from app.gamification.rules import ACHIEVEMENTS
+from app.services.competency import competency_view
 from app.models.models import Attempt, ChoiceLog, Employee, EmployeeAchievement, ScenarioBest
 from app.schemas.schemas import (
     AttemptResultOut,
@@ -120,6 +122,11 @@ def _result_step(nodes: dict, log: ChoiceLog) -> ResultStepOut:
         safety_after=log.safety_after,
         explanation=outcome.get("explanation"),
         lesson=node.get("debrief"),
+        assessment=[
+            {"id": c, "title": COMPETENCIES[c].title, **points}
+            for c, points in (log.assessment or {}).items()
+            if c in COMPETENCIES
+        ],
     )
 
 
@@ -160,6 +167,7 @@ def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
             outcome=ending.get("outcome"),
         ),
         steps=[_result_step(graph["nodes"], log) for log in logs],
+        competencies=competency_view(attempt.assessment or {}),
     )
 
 

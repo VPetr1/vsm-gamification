@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from app.core.clock import as_utc
+from app.gamification.competencies import add_assessments
 from app.models.models import Attempt, AttemptStatus
 from app.scenarios.conditions import evaluate
 from app.scenarios.errors import ScenarioError
@@ -29,6 +30,7 @@ class StepResult:
     safety_delta: int
     loyalty_after: int
     safety_after: int
+    assessment: dict
 
 
 class ScenarioEngine:
@@ -46,6 +48,7 @@ class ScenarioEngine:
       5. next node: next_node, or the first transition whose condition holds
          for the state *after* steps 3-4 (the last transition is the default);
       6. step += 1, the new node's timer starts; an ending finishes the attempt.
+    Competency points for the step are taken before step 3, over the choices visible at that moment.
     """
 
     def __init__(self, graph: dict):
@@ -64,6 +67,7 @@ class ScenarioEngine:
         attempt.loyalty = initial["loyalty"]
         attempt.safety = initial["safety"]
         attempt.flags = dict(self.graph.get("flags", {}))
+        attempt.assessment = {}
         attempt.status = AttemptStatus.in_progress
         return attempt
 
@@ -120,6 +124,19 @@ class ScenarioEngine:
                 return transition["next_node"]
         raise RuntimeError("no transition matched; the validator requires an unconditional last transition")
 
+    @staticmethod
+    def _assess(node: dict, outcome: dict, attempt: Attempt) -> dict:
+        """Earned vs best available per competency, over the options the player could see."""
+        options = visible_choices(node, attempt)
+        competencies = {c for option in options for c in option.get("assessment", {})}
+        result = {}
+        for competency in sorted(competencies):
+            best = max(option.get("assessment", {}).get(competency, 0) for option in options)
+            if best > 0:
+                earned = min(outcome.get("assessment", {}).get(competency, 0), best)
+                result[competency] = {"earned": earned, "max": best}
+        return result
+
     def _ensure_in_progress(self, attempt: Attempt) -> None:
         if attempt.status != AttemptStatus.in_progress:
             raise ScenarioError("attempt_finished", "attempt is already finished")
@@ -135,6 +152,8 @@ class ScenarioEngine:
         self, attempt: Attempt, outcome: dict, now: datetime, choice_id: str | None, timed_out: bool
     ) -> StepResult:
         prev_node_id = attempt.current_node
+        assessment = self._assess(self.current_node(attempt), outcome, attempt)
+        attempt.assessment = add_assessments(attempt.assessment, assessment)
         effects = outcome.get("effects", {})
         old_loyalty, old_safety = attempt.loyalty, attempt.safety
 
@@ -162,4 +181,5 @@ class ScenarioEngine:
             safety_delta=attempt.safety - old_safety,
             loyalty_after=attempt.loyalty,
             safety_after=attempt.safety,
+            assessment=assessment,
         )

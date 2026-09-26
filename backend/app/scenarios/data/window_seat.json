@@ -1,6 +1,13 @@
 {
   "title": "Место у окна",
   "description": "Мужчина занял место девушки у окна, перепутав вагон, а его чемодан перегораживает проход. Синтетический учебный сценарий.",
+  "tags": [
+    "communication",
+    "safety",
+    "stress_resistance",
+    "конфликт",
+    "багаж"
+  ],
   "graph": {
     "initial": {
       "loyalty": 60,
@@ -68,6 +75,10 @@
             "next_node": "suitcase",
             "set_flags": {
               "calm_approach": true
+            },
+            "assessment": {
+              "communication": 2,
+              "safety": 1
             }
           },
           {
@@ -80,7 +91,11 @@
               "was_rude": true
             },
             "explanation": "Приказ до проверки фактов звучит как обвинение. Даже если пассажир неправ, резкость запоминается и скажется на исходе.",
-            "next_node": "suitcase"
+            "next_node": "suitcase",
+            "assessment": {
+              "communication": 0,
+              "safety": 1
+            }
           },
           {
             "id": "ignore",
@@ -93,7 +108,11 @@
               "ignored_request": true
             },
             "explanation": "Обращение пассажира нельзя откладывать: конфликт разрастается, а чемодан в проходе остаётся угрозой безопасности.",
-            "next_node": "ignored"
+            "next_node": "ignored",
+            "assessment": {
+              "communication": 0,
+              "safety": 0
+            }
           }
         ]
       },
@@ -108,13 +127,19 @@
               "loyalty": 5
             },
             "explanation": "Извинение частично возвращает доверие, но упущенное время уже отразилось на шкалах.",
-            "next_node": "suitcase"
+            "next_node": "suitcase",
+            "assessment": {
+              "communication": 2
+            }
           },
           {
             "id": "call_senior",
             "text": "Вызвать начальника поезда: ситуация уже вышла за рамки обычной",
             "explanation": "Обращение за помощью само по себе не снижает оценку. Потери по шкалам в этой попытке — следствие того, что просьбу пассажира проигнорировали.",
-            "next_node": "end_senior"
+            "next_node": "end_senior",
+            "assessment": {
+              "communication": 2
+            }
           }
         ]
       },
@@ -128,7 +153,11 @@
             "safety": -20
           },
           "explanation": "Время вышло: пассажирка споткнулась о чемодан. В критической ситуации промедление опаснее любой неидеальной реакции.",
-          "next_node": "trip"
+          "next_node": "trip",
+          "assessment": {
+            "safety": 0,
+            "stress_resistance": 0
+          }
         },
         "choices": [
           {
@@ -143,7 +172,12 @@
               "aisle_cleared_in_time": true
             },
             "explanation": "Проход освобождён, а мужчина стал участником решения, а не виноватым, — растут обе шкалы.",
-            "next_node": "tickets"
+            "next_node": "tickets",
+            "assessment": {
+              "safety": 2,
+              "stress_resistance": 2,
+              "communication": 1
+            }
           },
           {
             "id": "stow_yourself",
@@ -156,7 +190,11 @@
               "aisle_cleared_in_time": true
             },
             "explanation": "Проход свободен. Лояльность не выросла: владельца лишь поставили перед фактом.",
-            "next_node": "tickets"
+            "next_node": "tickets",
+            "assessment": {
+              "safety": 2,
+              "stress_resistance": 2
+            }
           },
           {
             "id": "leave_it",
@@ -165,7 +203,11 @@
               "safety": -15
             },
             "explanation": "Спор о месте мог подождать двадцать секунд, а загороженный проход — нет. Угроза безопасности сохраняется.",
-            "next_node": "tickets"
+            "next_node": "tickets",
+            "assessment": {
+              "safety": 0,
+              "stress_resistance": 1
+            }
           }
         ]
       },
@@ -184,7 +226,11 @@
               "aisle_cleared": true
             },
             "explanation": "Опасность устранена, пассажирка видит заботу. Одному на всё ушло больше времени, проход дольше оставался скользким.",
-            "next_node": "tickets"
+            "next_node": "tickets",
+            "assessment": {
+              "safety": 1,
+              "communication": 1
+            }
           },
           {
             "id": "call_colleague",
@@ -197,7 +243,11 @@
               "aisle_cleared": true
             },
             "explanation": "Разделить работу с коллегой — правильно: опасность устранена быстрее. Просьба о помощи не штрафуется.",
-            "next_node": "tickets"
+            "next_node": "tickets",
+            "assessment": {
+              "safety": 2,
+              "communication": 1
+            }
           },
           {
             "id": "back_to_dispute",
@@ -206,7 +256,11 @@
               "safety": -10
             },
             "explanation": "Скользкий пол и чемодан в проходе остались, безопасность снова снижается.",
-            "next_node": "tickets"
+            "next_node": "tickets",
+            "assessment": {
+              "safety": 0,
+              "communication": 0
+            }
           }
         ]
       },
@@ -225,7 +279,10 @@
               "tickets_checked": true
             },
             "explanation": "Проверка документов — основа решения: без неё любое действие — догадка. Обе стороны видят, что вы разбираетесь по существу.",
-            "next_node": "wagon_error"
+            "next_node": "wagon_error",
+            "assessment": {
+              "communication": 2
+            }
           },
           {
             "id": "promise_upgrade",
@@ -238,7 +295,10 @@
               "aisle_cleared": false
             },
             "explanation": "Проводник не может обещать повышение класса без подтверждения. Мужчина ушёл вместе с чемоданом, но сиюминутная уступчивость обернётся новым конфликтом.",
-            "next_node": "promise"
+            "next_node": "promise",
+            "assessment": {
+              "communication": 0
+            }
           },
           {
             "id": "reseat_girl",
@@ -247,7 +307,10 @@
               "loyalty": -10
             },
             "explanation": "Пассажир с билетом на это место не должен его уступать. Без проверки вы, возможно, наказали правого.",
-            "next_node": "reseat"
+            "next_node": "reseat",
+            "assessment": {
+              "communication": 0
+            }
           }
         ]
       },
@@ -267,7 +330,11 @@
               "tickets_checked": true
             },
             "explanation": "Верный порядок: угроза безопасности устранена, ошибка признана. Лояльность немного снизилась — обещание нарушено.",
-            "next_node": "wagon_error"
+            "next_node": "wagon_error",
+            "assessment": {
+              "communication": 2,
+              "safety": 2
+            }
           },
           {
             "id": "apologize_and_check",
@@ -280,7 +347,11 @@
               "tickets_checked": true
             },
             "explanation": "Ошибку признали, но проход снова загорожен — безопасность снижается.",
-            "next_node": "wagon_error"
+            "next_node": "wagon_error",
+            "assessment": {
+              "communication": 1,
+              "safety": 0
+            }
           },
           {
             "id": "insist",
@@ -289,13 +360,21 @@
               "loyalty": -15
             },
             "explanation": "Повторное невыполнимое обещание окончательно подрывает доверие. Конфликт затягивается, и разбираться приходится начальнику поезда.",
-            "next_node": "end_senior"
+            "next_node": "end_senior",
+            "assessment": {
+              "communication": 0,
+              "safety": 0
+            }
           },
           {
             "id": "call_senior",
             "text": "Пригласить начальника поезда: вы превысили полномочия, нужен старший",
             "explanation": "Передать ситуацию старшему, когда вы вышли за рамки полномочий, — корректно. Само обращение за помощью не штрафуется.",
-            "next_node": "end_senior"
+            "next_node": "end_senior",
+            "assessment": {
+              "communication": 2,
+              "safety": 2
+            }
           }
         ]
       },
@@ -334,6 +413,9 @@
             "next_node": "resolution",
             "set_flags": {
               "tactful_explanation": true
+            },
+            "assessment": {
+              "communication": 2
             }
           },
           {
@@ -343,7 +425,10 @@
               "loyalty": -10
             },
             "explanation": "Публичное указание на ошибку унижает пассажира: он уступит, но с обидой.",
-            "next_node": "resolution"
+            "next_node": "resolution",
+            "assessment": {
+              "communication": 0
+            }
           }
         ]
       },
@@ -396,7 +481,10 @@
               {
                 "next_node": "end_calm"
               }
-            ]
+            ],
+            "assessment": {
+              "communication": 1
+            }
           },
           {
             "id": "send_alone",
@@ -440,7 +528,10 @@
               {
                 "next_node": "end_calm"
               }
-            ]
+            ],
+            "assessment": {
+              "communication": 0
+            }
           }
         ]
       },
@@ -488,7 +579,10 @@
               {
                 "next_node": "end_calm"
               }
-            ]
+            ],
+            "assessment": {
+              "safety": 2
+            }
           },
           {
             "id": "leave",
@@ -497,7 +591,10 @@
               "safety": -10
             },
             "explanation": "Загороженный проход остался и после разрешения спора: безопасность под угрозой, вагон недоволен.",
-            "next_node": "end_dissatisfied"
+            "next_node": "end_dissatisfied",
+            "assessment": {
+              "safety": 0
+            }
           }
         ]
       },

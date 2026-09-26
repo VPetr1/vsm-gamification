@@ -73,6 +73,7 @@ class ResultStepOut(BaseModel):
     safety_after: int | None
     explanation: str | None = Field(description="Why this decision changed the scales the way it did")
     lesson: str | None = Field(description="What the best course of action was at this step")
+    assessment: list[dict] = Field(default_factory=list, description="Per competency: earned vs best available")
 
 
 class EndingOut(BaseModel):
@@ -101,4 +102,5 @@ class AttemptResultOut(BaseModel):
     final: ScalesOut
     ending: EndingOut
     steps: list[ResultStepOut]
+    competencies: list[dict] = Field(default_factory=list, description="Attempt totals; percent null = no data")
     reward: RewardOut | None = None
