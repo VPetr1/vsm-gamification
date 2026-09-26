@@ -1280,3 +1280,284 @@ a {
 .reward .finals strong {
   color: var(--teal-dark);
 }
+
+/* Editor */
+.editor {
+  display: grid;
+  gap: 16px;
+}
+
+.editor-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.toolbar-actions,
+.inline {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.inline.wrap {
+  align-items: end;
+}
+
+.file-button {
+  position: relative;
+  cursor: pointer;
+}
+
+.editor-body {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.node-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.node-list li button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.node-list li button:hover {
+  background: var(--milk);
+}
+
+.node-list li button.is-selected {
+  border-color: var(--teal);
+  background: var(--teal-soft);
+}
+
+.node-tags {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.node-tags .chip {
+  font-size: 0.72rem;
+  padding: 1px 6px;
+}
+
+.node-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.field.wide {
+  flex: 1 1 320px;
+  max-width: none;
+}
+
+.inline-check {
+  flex-direction: row;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+
+.mini-fieldset legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0 4px;
+}
+
+.number-grid,
+.flag-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.number-grid label,
+.flag-grid label,
+.block {
+  display: grid;
+  gap: 4px;
+}
+
+.outcome input,
+.outcome select,
+.outcome textarea,
+.condition input,
+.condition select,
+.condition textarea,
+.clause-block input,
+.clause-block select,
+.graph-settings input,
+.graph-settings select,
+.visual-editor select,
+.inline input {
+  font: inherit;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  min-height: 36px;
+}
+
+.outcome textarea,
+.condition textarea {
+  width: 100%;
+}
+
+.condition {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.clause,
+.clause-block {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.clause-block {
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--milk);
+  margin-bottom: 6px;
+}
+
+.transitions {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+}
+
+.choice-editors {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.choice-editor {
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.flag-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.flag-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--milk);
+  border-radius: 999px;
+  padding: 2px 4px 2px 10px;
+}
+
+.error-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #8a2020;
+  display: grid;
+  gap: 4px;
+}
+
+.errors-card {
+  border-color: #f0b8b8;
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: #8a2020;
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+}
+
+.notice-ok {
+  background: var(--teal-soft);
+  color: #0d4f4b;
+  border-color: var(--teal);
+}
+
+.danger {
+  color: var(--red);
+}
+
+.visual-editor {
+  margin-top: 12px;
+}
+
+.visual-editor summary,
+.graph-settings summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chip-bad {
+  background: var(--red-soft);
+  color: #8a2020;
+}
+
+@media (max-width: 760px) {
+  .editor-body {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-toolbar {
+    position: static;
+  }
+}

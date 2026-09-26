@@ -3,6 +3,8 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from "react
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { CatalogPage } from "./pages/CatalogPage";
+import { EditorListPage } from "./pages/EditorListPage";
+import { EditorPage } from "./pages/EditorPage";
 import { HomePage } from "./pages/HomePage";
 import { LeaderboardPage } from "./pages/LeaderboardPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -16,6 +18,22 @@ function RequireUser({ children }: { children: ReactNode }) {
   const location = useLocation();
   if (checking) return <Loading label="Проверяем вход…" />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  return <>{children}</>;
+}
+
+function RequireRole({ role, children }: { role: "methodologist"; children: ReactNode }) {
+  const { user } = useAuth();
+  if (user?.role !== role) {
+    return (
+      <section className="stack">
+        <h1>Нет доступа</h1>
+        <p className="lead">Раздел доступен только методисту.</p>
+        <Link to="/" className="btn btn-secondary">
+          На главную
+        </Link>
+      </section>
+    );
+  }
   return <>{children}</>;
 }
 
@@ -49,6 +67,22 @@ export function App() {
             <Route path="attempts/:attemptId/result" element={<ResultPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="leaderboard" element={<LeaderboardPage />} />
+            <Route
+              path="editor"
+              element={
+                <RequireRole role="methodologist">
+                  <EditorListPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="editor/:scenarioId"
+              element={
+                <RequireRole role="methodologist">
+                  <EditorPage />
+                </RequireRole>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
