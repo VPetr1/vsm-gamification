@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import attempts, auth, editor, employees, errors, me, scenarios
+from app.api import attempts, auth, editor, employees, errors, integrations, me, scenarios
 from app.core.config import settings
 
 app = FastAPI(title="Рейс 400 — тренажёр проводника ВСМ", version="0.2.0")
@@ -25,6 +25,7 @@ app.include_router(scenarios.router)
 app.include_router(attempts.router)
 app.include_router(me.router)
 app.include_router(editor.router)
+app.include_router(integrations.router)
 
 
 @app.get("/health")

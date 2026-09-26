@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     # Comma-separated origins allowed to call the API from another origin; empty = same origin only.
     cors_origins: str = ""
+    # Key for /integrations/* (HR, LMS). Empty disables the integration API.
+    integration_api_key: str = ""
+    # Sign-in throttling: after this many wrong passwords in a row the login is locked for a while.
+    login_max_failures: int = 5
+    login_lock_seconds: int = 60
 
     @property
     def cors_origin_list(self) -> list[str]:

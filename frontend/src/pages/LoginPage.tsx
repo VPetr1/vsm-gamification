@@ -47,7 +47,11 @@ export function LoginPage() {
       await signIn(selected, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setFormError(err instanceof ApiError && err.code === "invalid_credentials" ? "Неверный пароль." : err instanceof ApiError ? err.message : "Не удалось войти.");
+      if (err instanceof ApiError && err.code === "too_many_attempts") {
+        setFormError(`Слишком много неудачных попыток. Повторите через ${String(err.detail.retry_after ?? 60)} с.`);
+      } else {
+        setFormError(err instanceof ApiError && err.code === "invalid_credentials" ? "Неверный пароль." : err instanceof ApiError ? err.message : "Не удалось войти.");
+      }
       setSubmitting(false);
     }
   };

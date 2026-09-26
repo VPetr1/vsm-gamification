@@ -80,3 +80,25 @@ def test_demo_accounts_list_exposes_display_fields_only(anon, make_account):
     make_account("anna", full_name="Анна Тестова")
     accounts = anon.get("/auth/demo-accounts").json()
     assert accounts == [{"login": "anna", "full_name": "Анна Тестова", "role": "conductor", "brigade": "Бригада 1", "depot": "Депо Восток"}]
+
+
+def test_repeated_wrong_passwords_lock_the_login_for_a_while(anon, make_account, clock):
+    make_account("anna")
+    for _ in range(5):
+        assert anon.post("/auth/login", json={"login": "anna", "password": "nope"}).status_code == 401
+    locked = anon.post("/auth/login", json={"login": "anna", "password": PASSWORD})
+    assert locked.status_code == 429
+    assert locked.json()["detail"]["code"] == "too_many_attempts"
+    assert locked.json()["detail"]["retry_after"] == 61
+
+    clock.advance(61)
+    assert anon.post("/auth/login", json={"login": "anna", "password": PASSWORD}).status_code == 200
+
+
+def test_successful_login_resets_the_failure_counter(anon, make_account):
+    make_account("anna")
+    for _ in range(4):
+        anon.post("/auth/login", json={"login": "anna", "password": "nope"})
+    assert anon.post("/auth/login", json={"login": "anna", "password": PASSWORD}).status_code == 200
+    for _ in range(4):
+        assert anon.post("/auth/login", json={"login": "anna", "password": "nope"}).status_code == 401
