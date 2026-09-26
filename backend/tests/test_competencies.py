@@ -130,3 +130,11 @@ def test_history_lists_competency_results_per_attempt(setup, clock):
     play(anna, clock, ids["demo"], "c1")
     item = anna.get("/me/attempts").json()[0]
     assert {c["id"] for c in item["competencies"]} == {"communication", "safety", "stress_resistance"}
+
+
+def test_nothing_is_weak_when_every_assessed_decision_was_right(setup, clock):
+    anna, ids = setup
+    play(anna, clock, ids["demo"], "c1")
+    profile = anna.get("/me/profile").json()
+    assert profile["weakest"] is None
+    assert (profile["recommendation"]["kind"], profile["recommendation"]["scenario_id"]) == ("new", ids["window"])

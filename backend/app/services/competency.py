@@ -41,8 +41,9 @@ def competency_view(totals: dict) -> list[dict]:
 
 
 def weakest(items: list[dict]) -> dict | None:
-    evaluated = [i for i in items if i["percent"] is not None]
-    return min(evaluated, key=lambda i: i["percent"]) if evaluated else None
+    """Lowest evaluated competency below 100%; nothing is "weak" when every assessed decision was right."""
+    candidates = [i for i in items if i["percent"] is not None and i["percent"] < 100]
+    return min(candidates, key=lambda i: i["percent"]) if candidates else None
 
 
 def _recommend(db: Session, employee: Employee, latest: dict[str, Attempt], weak: dict | None) -> dict | None:
