@@ -1,10 +1,12 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { NotificationsBell } from "./NotificationsBell";
 
 export function Layout() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   return (
     <div className="app">
       <a className="skip-link" href="#main">
@@ -46,7 +48,9 @@ export function Layout() {
         </div>
       </header>
       <main id="main" className="container main">
-        <Outlet />
+        <ErrorBoundary key={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <footer className="app-footer container">
         Учебный тренажёр. Сценарии и люди вымышлены; объяснения — методические, а не официальный регламент ВСМ.
