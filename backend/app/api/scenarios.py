@@ -84,7 +84,7 @@ def list_scenarios(db: Session = Depends(get_db), user: Employee = Depends(curre
         .order_by(Attempt.started_at)
     ):
         in_progress[scenario_id] = attempt_id
-    scenarios = db.scalars(select(Scenario).where(Scenario.version > 0).order_by(Scenario.created_at))
+    scenarios = db.scalars(select(Scenario).where(Scenario.version > 0).order_by(Scenario.created_at, Scenario.title))
     return [
         CatalogItemOut(
             id=s.id,

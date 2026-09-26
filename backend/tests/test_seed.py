@@ -23,3 +23,12 @@ def test_seed_is_idempotent_and_versions_changed_scenarios(session_factory):
         db.refresh(window)
         assert window.version == 2
         assert window.graph["start_node"] == "start"
+
+
+def test_catalog_order_starts_with_the_warm_up(session_factory, login_as, clock):
+    with session_factory() as db:
+        seed(db)
+    titles = [s["title"] for s in login_as("anna").get("/scenarios").json()]
+    assert titles == ["Конфликт из-за откинутого кресла", "Место у окна", "Пассажиру стало плохо"]
+    rec = login_as("boris").get("/me/profile").json()["recommendation"]
+    assert (rec["kind"], rec["title"]) == ("start", "Конфликт из-за откинутого кресла")

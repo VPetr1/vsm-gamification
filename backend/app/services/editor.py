@@ -63,7 +63,7 @@ def view(s: Scenario) -> dict:
 
 def list_items(db: Session) -> list[dict]:
     items = []
-    for s in db.scalars(select(Scenario).order_by(Scenario.created_at)):
+    for s in db.scalars(select(Scenario).order_by(Scenario.created_at, Scenario.title)):
         draft = _draft(s)
         items.append(
             {

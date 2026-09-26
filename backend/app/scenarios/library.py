@@ -12,5 +12,11 @@ def load_scenario(name: str) -> dict:
     return {**data, "key": name}
 
 
+# Catalog order for new users: a short warm-up first; files not listed follow alphabetically.
+BUILTIN_ORDER = ["seat_recline", "window_seat", "medical_help"]
+
+
 def builtin_scenarios() -> list[dict]:
-    return [load_scenario(path.stem) for path in sorted(DATA_DIR.glob("*.json"))]
+    names = sorted(path.stem for path in DATA_DIR.glob("*.json"))
+    ordered = [n for n in BUILTIN_ORDER if n in names] + [n for n in names if n not in BUILTIN_ORDER]
+    return [load_scenario(name) for name in ordered]

@@ -91,7 +91,7 @@ def seed_accounts(db: Session, password: str) -> None:
 def seed_scenarios(db: Session, now: datetime) -> None:
     """Bundled scenarios are matched by key. Once a methodologist publishes one from the editor
     (origin = "editor"), the seed no longer overwrites it, so a restart never reverts their work."""
-    for data in builtin_scenarios():
+    for position, data in enumerate(builtin_scenarios()):
         validate_graph(data["graph"])
         existing = db.scalars(select(Scenario).where(Scenario.key == data["key"])).first()
         if existing is None:
@@ -103,8 +103,11 @@ def seed_scenarios(db: Session, now: datetime) -> None:
                     existing.origin = "builtin"
         tags = data.get("tags", [])
         if existing is None:
+            # Distinct creation times keep the catalog order stable (created_at is the sort key).
+            created = now + timedelta(seconds=position)
             db.add(Scenario(key=data["key"], origin="builtin", title=data["title"], description=data["description"],
-                            tags=tags, graph=data["graph"], version=1, published_at=now, updated_at=now))
+                            tags=tags, graph=data["graph"], version=1, created_at=created, published_at=created,
+                            updated_at=created))
         elif existing.origin == "builtin" and (
             existing.graph != data["graph"] or existing.description != data["description"]
             or existing.tags != tags or existing.title != data["title"]

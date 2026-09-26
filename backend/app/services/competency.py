@@ -47,7 +47,7 @@ def weakest(items: list[dict]) -> dict | None:
 
 
 def _recommend(db: Session, employee: Employee, latest: dict[str, Attempt], weak: dict | None) -> dict | None:
-    published = list(db.scalars(select(Scenario).where(Scenario.version > 0).order_by(Scenario.created_at)))
+    published = list(db.scalars(select(Scenario).where(Scenario.version > 0).order_by(Scenario.created_at, Scenario.title)))
     if not published:
         return None
     unfinished = [s for s in published if s.id not in latest]
