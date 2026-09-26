@@ -2,14 +2,56 @@
   "title": "Место у окна",
   "description": "Мужчина занял место девушки у окна, перепутав вагон, а его чемодан перегораживает проход. Синтетический учебный сценарий.",
   "graph": {
-    "initial": {"loyalty": 60, "safety": 80},
+    "initial": {
+      "loyalty": 60,
+      "safety": 80
+    },
     "flags": {
       "was_rude": false,
       "ignored_request": false,
       "aisle_cleared": false,
       "tickets_checked": false,
-      "promised_upgrade": false
+      "promised_upgrade": false,
+      "calm_approach": false,
+      "tactful_explanation": false,
+      "aisle_cleared_in_time": false
     },
+    "awards": [
+      {
+        "achievement": "diplomat",
+        "when": {
+          "all": [
+            {
+              "flag": "calm_approach"
+            },
+            {
+              "flag": "tactful_explanation"
+            },
+            {
+              "not": {
+                "flag": "was_rude"
+              }
+            },
+            {
+              "not": {
+                "flag": "ignored_request"
+              }
+            },
+            {
+              "not": {
+                "flag": "promised_upgrade"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "achievement": "safe_passage",
+        "when": {
+          "flag": "aisle_cleared_in_time"
+        }
+      }
+    ],
     "start_node": "start",
     "nodes": {
       "start": {
@@ -19,23 +61,37 @@
           {
             "id": "calm",
             "text": "Подойти, представиться и спокойно выяснить, что произошло",
-            "effects": {"loyalty": 5},
+            "effects": {
+              "loyalty": 5
+            },
             "explanation": "Спокойный тон и готовность выслушать обе стороны снижают напряжение: пассажиры настроены на диалог, а не на спор.",
-            "next_node": "suitcase"
+            "next_node": "suitcase",
+            "set_flags": {
+              "calm_approach": true
+            }
           },
           {
             "id": "order",
             "text": "Строго потребовать от мужчины немедленно освободить чужое место",
-            "effects": {"loyalty": -10},
-            "set_flags": {"was_rude": true},
+            "effects": {
+              "loyalty": -10
+            },
+            "set_flags": {
+              "was_rude": true
+            },
             "explanation": "Приказ до проверки фактов звучит как обвинение. Даже если пассажир неправ, резкость запоминается и скажется на исходе.",
             "next_node": "suitcase"
           },
           {
             "id": "ignore",
             "text": "Сказать девушке, что разберётесь позже, и продолжить обход",
-            "effects": {"loyalty": -15, "safety": -5},
-            "set_flags": {"ignored_request": true},
+            "effects": {
+              "loyalty": -15,
+              "safety": -5
+            },
+            "set_flags": {
+              "ignored_request": true
+            },
             "explanation": "Обращение пассажира нельзя откладывать: конфликт разрастается, а чемодан в проходе остаётся угрозой безопасности.",
             "next_node": "ignored"
           }
@@ -48,7 +104,9 @@
           {
             "id": "apologize",
             "text": "Извиниться за задержку и сразу подойти к мужчине",
-            "effects": {"loyalty": 5},
+            "effects": {
+              "loyalty": 5
+            },
             "explanation": "Извинение частично возвращает доверие, но упущенное время уже отразилось на шкалах.",
             "next_node": "suitcase"
           },
@@ -65,7 +123,10 @@
         "debrief": "Свободный проход — требование безопасности: по нему ходят пассажиры и персонал, через него проходит эвакуация. Сначала устраните угрозу, спор о месте подождёт.",
         "timer_seconds": 20,
         "timeout": {
-          "effects": {"loyalty": -5, "safety": -20},
+          "effects": {
+            "loyalty": -5,
+            "safety": -20
+          },
           "explanation": "Время вышло: пассажирка споткнулась о чемодан. В критической ситуации промедление опаснее любой неидеальной реакции.",
           "next_node": "trip"
         },
@@ -73,23 +134,36 @@
           {
             "id": "stow_together",
             "text": "Вежливо попросить мужчину помочь и вместе убрать чемодан в багажное отделение",
-            "effects": {"loyalty": 5, "safety": 10},
-            "set_flags": {"aisle_cleared": true},
+            "effects": {
+              "loyalty": 5,
+              "safety": 10
+            },
+            "set_flags": {
+              "aisle_cleared": true,
+              "aisle_cleared_in_time": true
+            },
             "explanation": "Проход освобождён, а мужчина стал участником решения, а не виноватым, — растут обе шкалы.",
             "next_node": "tickets"
           },
           {
             "id": "stow_yourself",
             "text": "Самому откатить чемодан к багажному отделению, предупредив владельца",
-            "effects": {"safety": 10},
-            "set_flags": {"aisle_cleared": true},
+            "effects": {
+              "safety": 10
+            },
+            "set_flags": {
+              "aisle_cleared": true,
+              "aisle_cleared_in_time": true
+            },
             "explanation": "Проход свободен. Лояльность не выросла: владельца лишь поставили перед фактом.",
             "next_node": "tickets"
           },
           {
             "id": "leave_it",
             "text": "Оставить чемодан: сначала выяснить, чьё это место",
-            "effects": {"safety": -15},
+            "effects": {
+              "safety": -15
+            },
             "explanation": "Спор о месте мог подождать двадцать секунд, а загороженный проход — нет. Угроза безопасности сохраняется.",
             "next_node": "tickets"
           }
@@ -102,23 +176,35 @@
           {
             "id": "help_alone",
             "text": "Убедиться, что пассажирка в порядке, самому убрать чемодан и вытереть пол",
-            "effects": {"loyalty": 5, "safety": 5},
-            "set_flags": {"aisle_cleared": true},
+            "effects": {
+              "loyalty": 5,
+              "safety": 5
+            },
+            "set_flags": {
+              "aisle_cleared": true
+            },
             "explanation": "Опасность устранена, пассажирка видит заботу. Одному на всё ушло больше времени, проход дольше оставался скользким.",
             "next_node": "tickets"
           },
           {
             "id": "call_colleague",
             "text": "Позвать коллегу на уборку, а самому заняться пассажиркой и чемоданом",
-            "effects": {"loyalty": 5, "safety": 10},
-            "set_flags": {"aisle_cleared": true},
+            "effects": {
+              "loyalty": 5,
+              "safety": 10
+            },
+            "set_flags": {
+              "aisle_cleared": true
+            },
             "explanation": "Разделить работу с коллегой — правильно: опасность устранена быстрее. Просьба о помощи не штрафуется.",
             "next_node": "tickets"
           },
           {
             "id": "back_to_dispute",
             "text": "Вернуться к спору о месте — пол вытрут позже",
-            "effects": {"safety": -10},
+            "effects": {
+              "safety": -10
+            },
             "explanation": "Скользкий пол и чемодан в проходе остались, безопасность снова снижается.",
             "next_node": "tickets"
           }
@@ -131,23 +217,35 @@
           {
             "id": "check",
             "text": "Попросить оба билета и сверить все реквизиты",
-            "effects": {"loyalty": 5, "safety": 5},
-            "set_flags": {"tickets_checked": true},
+            "effects": {
+              "loyalty": 5,
+              "safety": 5
+            },
+            "set_flags": {
+              "tickets_checked": true
+            },
             "explanation": "Проверка документов — основа решения: без неё любое действие — догадка. Обе стороны видят, что вы разбираетесь по существу.",
             "next_node": "wagon_error"
           },
           {
             "id": "promise_upgrade",
             "text": "Пообещать мужчине бесплатное повышение класса, если он уступит место",
-            "effects": {"loyalty": 10},
-            "set_flags": {"promised_upgrade": true, "aisle_cleared": false},
+            "effects": {
+              "loyalty": 10
+            },
+            "set_flags": {
+              "promised_upgrade": true,
+              "aisle_cleared": false
+            },
             "explanation": "Проводник не может обещать повышение класса без подтверждения. Мужчина ушёл вместе с чемоданом, но сиюминутная уступчивость обернётся новым конфликтом.",
             "next_node": "promise"
           },
           {
             "id": "reseat_girl",
             "text": "Предложить девушке сесть на свободное место 12С, не проверяя билеты",
-            "effects": {"loyalty": -10},
+            "effects": {
+              "loyalty": -10
+            },
             "explanation": "Пассажир с билетом на это место не должен его уступать. Без проверки вы, возможно, наказали правого.",
             "next_node": "reseat"
           }
@@ -160,23 +258,36 @@
           {
             "id": "clear_and_apologize",
             "text": "Сначала попросить убрать чемодан из прохода, затем извиниться за обещание и сверить билеты",
-            "effects": {"loyalty": -5, "safety": 10},
-            "set_flags": {"aisle_cleared": true, "tickets_checked": true},
+            "effects": {
+              "loyalty": -5,
+              "safety": 10
+            },
+            "set_flags": {
+              "aisle_cleared": true,
+              "tickets_checked": true
+            },
             "explanation": "Верный порядок: угроза безопасности устранена, ошибка признана. Лояльность немного снизилась — обещание нарушено.",
             "next_node": "wagon_error"
           },
           {
             "id": "apologize_and_check",
             "text": "Извиниться за обещание и сразу сверить билеты, чемодан пока не трогать",
-            "effects": {"loyalty": -5, "safety": -5},
-            "set_flags": {"tickets_checked": true},
+            "effects": {
+              "loyalty": -5,
+              "safety": -5
+            },
+            "set_flags": {
+              "tickets_checked": true
+            },
             "explanation": "Ошибку признали, но проход снова загорожен — безопасность снижается.",
             "next_node": "wagon_error"
           },
           {
             "id": "insist",
             "text": "Уверять, что повышение «вот-вот оформят»",
-            "effects": {"loyalty": -15},
+            "effects": {
+              "loyalty": -15
+            },
             "explanation": "Повторное невыполнимое обещание окончательно подрывает доверие. Конфликт затягивается, и разбираться приходится начальнику поезда.",
             "next_node": "end_senior"
           },
@@ -195,7 +306,9 @@
           {
             "id": "check_now",
             "text": "Извиниться перед девушкой и наконец сверить билеты у неё и у мужчины",
-            "set_flags": {"tickets_checked": true},
+            "set_flags": {
+              "tickets_checked": true
+            },
             "explanation": "Возврат к проверке документов — правильный шаг, но недовольство девушки уже накопилось.",
             "next_node": "wagon_error"
           },
@@ -214,14 +327,21 @@
           {
             "id": "tactful",
             "text": "Вполголоса объяснить мужчине ошибку и предложить проводить его в вагон 6",
-            "effects": {"loyalty": 10},
+            "effects": {
+              "loyalty": 10
+            },
             "explanation": "Тактичное объяснение позволяет пассажиру сохранить лицо — он охотно исправляет ошибку.",
-            "next_node": "resolution"
+            "next_node": "resolution",
+            "set_flags": {
+              "tactful_explanation": true
+            }
           },
           {
             "id": "public",
             "text": "Громко, при всех, указать мужчине на его ошибку",
-            "effects": {"loyalty": -10},
+            "effects": {
+              "loyalty": -10
+            },
             "explanation": "Публичное указание на ошибку унижает пассажира: он уступит, но с обидой.",
             "next_node": "resolution"
           }
@@ -234,23 +354,48 @@
           {
             "id": "escort",
             "text": "Помочь собрать вещи и лично проводить мужчину в вагон 6",
-            "effects": {"loyalty": 5},
+            "effects": {
+              "loyalty": 5
+            },
             "explanation": "Личное сопровождение показывает заботу даже о пассажире, который ошибся.",
             "transitions": [
-              {"condition": {"not": {"flag": "aisle_cleared"}}, "next_node": "aisle"},
+              {
+                "condition": {
+                  "not": {
+                    "flag": "aisle_cleared"
+                  }
+                },
+                "next_node": "aisle"
+              },
               {
                 "condition": {
                   "any": [
-                    {"flag": "was_rude"},
-                    {"flag": "ignored_request"},
-                    {"flag": "promised_upgrade"},
-                    {"scale": "loyalty", "op": "<", "value": 70},
-                    {"scale": "safety", "op": "<", "value": 70}
+                    {
+                      "flag": "was_rude"
+                    },
+                    {
+                      "flag": "ignored_request"
+                    },
+                    {
+                      "flag": "promised_upgrade"
+                    },
+                    {
+                      "scale": "loyalty",
+                      "op": "<",
+                      "value": 70
+                    },
+                    {
+                      "scale": "safety",
+                      "op": "<",
+                      "value": 70
+                    }
                   ]
                 },
                 "next_node": "end_dissatisfied"
               },
-              {"next_node": "end_calm"}
+              {
+                "next_node": "end_calm"
+              }
             ]
           },
           {
@@ -258,20 +403,43 @@
             "text": "Объяснить, как пройти в вагон 6, и вернуться к работе",
             "explanation": "Корректно, но без дополнительной заботы: итог зависит от того, как складывалась ситуация раньше.",
             "transitions": [
-              {"condition": {"not": {"flag": "aisle_cleared"}}, "next_node": "aisle"},
+              {
+                "condition": {
+                  "not": {
+                    "flag": "aisle_cleared"
+                  }
+                },
+                "next_node": "aisle"
+              },
               {
                 "condition": {
                   "any": [
-                    {"flag": "was_rude"},
-                    {"flag": "ignored_request"},
-                    {"flag": "promised_upgrade"},
-                    {"scale": "loyalty", "op": "<", "value": 70},
-                    {"scale": "safety", "op": "<", "value": 70}
+                    {
+                      "flag": "was_rude"
+                    },
+                    {
+                      "flag": "ignored_request"
+                    },
+                    {
+                      "flag": "promised_upgrade"
+                    },
+                    {
+                      "scale": "loyalty",
+                      "op": "<",
+                      "value": 70
+                    },
+                    {
+                      "scale": "safety",
+                      "op": "<",
+                      "value": 70
+                    }
                   ]
                 },
                 "next_node": "end_dissatisfied"
               },
-              {"next_node": "end_calm"}
+              {
+                "next_node": "end_calm"
+              }
             ]
           }
         ]
@@ -283,29 +451,51 @@
           {
             "id": "clear_now",
             "text": "Помочь владельцу забрать чемодан и освободить проход",
-            "effects": {"safety": 10},
-            "set_flags": {"aisle_cleared": true},
+            "effects": {
+              "safety": 10
+            },
+            "set_flags": {
+              "aisle_cleared": true
+            },
             "explanation": "Последняя возможность освободить проход использована — угроза устранена.",
             "transitions": [
               {
                 "condition": {
                   "any": [
-                    {"flag": "was_rude"},
-                    {"flag": "ignored_request"},
-                    {"flag": "promised_upgrade"},
-                    {"scale": "loyalty", "op": "<", "value": 70},
-                    {"scale": "safety", "op": "<", "value": 70}
+                    {
+                      "flag": "was_rude"
+                    },
+                    {
+                      "flag": "ignored_request"
+                    },
+                    {
+                      "flag": "promised_upgrade"
+                    },
+                    {
+                      "scale": "loyalty",
+                      "op": "<",
+                      "value": 70
+                    },
+                    {
+                      "scale": "safety",
+                      "op": "<",
+                      "value": 70
+                    }
                   ]
                 },
                 "next_node": "end_dissatisfied"
               },
-              {"next_node": "end_calm"}
+              {
+                "next_node": "end_calm"
+              }
             ]
           },
           {
             "id": "leave",
             "text": "Не вмешиваться: пусть сам разберётся со своим багажом",
-            "effects": {"safety": -10},
+            "effects": {
+              "safety": -10
+            },
             "explanation": "Загороженный проход остался и после разрешения спора: безопасность под угрозой, вагон недоволен.",
             "next_node": "end_dissatisfied"
           }

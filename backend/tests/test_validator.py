@@ -210,3 +210,12 @@ def test_api_returns_readable_422(client):
     detail = r.json()["detail"]
     assert detail["code"] == "invalid_scenario"
     assert detail["errors"] == ["nodes.talk.choices[0].next_node: points to unknown node 'ghost'"]
+
+
+def test_awards_reference_known_achievements_and_valid_conditions():
+    err = errors_for(graph(awards=[{"achievement": "hero", "when": {"flag": "was_rude"}}, {"achievement": "diplomat"},
+                                   {"achievement": "diplomat", "when": {"flag": "nope"}}]))
+    assert "graph.awards[0].achievement: must be one of" in err
+    assert "graph.awards[1].when: a condition is required" in err
+    assert "graph.awards[2].when.flag: unknown flag 'nope'" in err
+    assert collect_errors(graph(awards=[{"achievement": "diplomat", "when": {"not": {"flag": "was_rude"}}}])) == []

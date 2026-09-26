@@ -82,6 +82,13 @@ class EndingOut(BaseModel):
     outcome: str | None
 
 
+class RewardOut(BaseModel):
+    score: int = Field(description="(final loyalty + final safety) / 2, halves rounded up")
+    xp_gained: int = Field(description="Improvement over the previous best in this scenario, never negative")
+    best_score: int
+    achievements: list[dict]
+
+
 class AttemptResultOut(BaseModel):
     attempt_id: str
     scenario_id: str
@@ -94,3 +101,4 @@ class AttemptResultOut(BaseModel):
     final: ScalesOut
     ending: EndingOut
     steps: list[ResultStepOut]
+    reward: RewardOut | None = None

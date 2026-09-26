@@ -16,6 +16,7 @@ STATUS_BY_CODE = {
     "attempt_not_finished": 409,
     "choice_not_available": 422,
     "choice_required": 422,
+    "bad_scope": 422,
 }
 
 

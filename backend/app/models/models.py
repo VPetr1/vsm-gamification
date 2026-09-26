@@ -90,6 +90,10 @@ class Attempt(Base):
     node_shown_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Filled once, in the same transaction as the finishing step (see services/rewards.py).
+    score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    xp_gained: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
     employee: Mapped[Employee] = relationship(back_populates="attempts")
     scenario: Mapped[Scenario] = relationship(back_populates="attempts")
@@ -128,3 +132,41 @@ class AuthSession(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     employee: Mapped[Employee] = relationship()
+
+
+class ScenarioBest(Base):
+    """Best score per employee and scenario; XP is the sum of these, so replays cannot farm XP."""
+
+    __tablename__ = "scenario_bests"
+    __table_args__ = (UniqueConstraint("employee_id", "scenario_id", name="uq_scenario_bests_employee_scenario"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"))
+    scenario_id: Mapped[str] = mapped_column(ForeignKey("scenarios.id"))
+    best_score: Mapped[int] = mapped_column(Integer)
+    attempt_id: Mapped[str] = mapped_column(ForeignKey("attempts.id"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class EmployeeAchievement(Base):
+    __tablename__ = "employee_achievements"
+    __table_args__ = (UniqueConstraint("employee_id", "achievement_id", name="uq_employee_achievements_once"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"))
+    achievement_id: Mapped[str] = mapped_column(String(50))
+    attempt_id: Mapped[str | None] = mapped_column(ForeignKey("attempts.id"), nullable=True)
+    awarded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(30))
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str] = mapped_column(Text, default="")
+    link: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -6,13 +6,15 @@ e.g. "nodes.n1.choices[0].effects.loyalty: must be an integer -100..100".
 
 from collections import deque
 
+from app.gamification.rules import ACHIEVEMENTS
 from app.scenarios.conditions import LEGACY_MIN, OPERATORS, SCALES
 
 TIMER_MIN, TIMER_MAX = 5, 600
 EFFECT_LIMIT = 100
 MAX_CONDITION_DEPTH = 8
 
-GRAPH_KEYS = {"start_node", "nodes", "initial", "flags"}
+GRAPH_KEYS = {"start_node", "nodes", "initial", "flags", "awards"}
+AWARD_KEYS = {"achievement", "when"}
 STEP_NODE_KEYS = {"text", "is_ending", "timer_seconds", "timeout", "choices", "debrief"}
 ENDING_NODE_KEYS = {"text", "is_ending", "ending_summary", "outcome"}
 OUTCOME_KEYS = {"effects", "set_flags", "next_node", "transitions", "explanation"}
@@ -69,6 +71,7 @@ class _Checker:
         self.unknown_keys(graph, GRAPH_KEYS, "graph")
         self.check_initial(graph.get("initial"))
         self.check_flags(graph.get("flags"))
+        self.check_awards(graph.get("awards"))
 
         nodes = graph.get("nodes")
         if not isinstance(nodes, dict) or not nodes:
@@ -111,6 +114,26 @@ class _Checker:
             if not isinstance(default, bool):
                 self.error(f"graph.flags.{name}", "default must be true or false")
         self.flags = set(flags)
+
+    def check_awards(self, awards) -> None:
+        """Achievements granted at the end when their condition holds for the final state."""
+        if awards is None:
+            return
+        if not isinstance(awards, list):
+            self.error("graph.awards", "must be a list")
+            return
+        for i, award in enumerate(awards):
+            path = f"graph.awards[{i}]"
+            if not isinstance(award, dict):
+                self.error(path, "must be an object")
+                continue
+            self.unknown_keys(award, AWARD_KEYS, path)
+            if award.get("achievement") not in ACHIEVEMENTS:
+                self.error(f"{path}.achievement", f"must be one of {sorted(ACHIEVEMENTS)}")
+            if "when" not in award:
+                self.error(f"{path}.when", "a condition is required")
+            else:
+                self.check_condition(award["when"], f"{path}.when", depth=0)
 
     def check_node(self, node, path: str) -> None:
         if not isinstance(node, dict):

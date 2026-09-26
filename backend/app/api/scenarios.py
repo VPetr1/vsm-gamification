@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import current_user, methodologist
 from app.core.db import get_db
-from app.models.models import Employee, Scenario
+from app.models.models import Attempt, AttemptStatus, Employee, Scenario, ScenarioBest
 from app.scenarios.validator import ScenarioValidationError, validate_graph
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
@@ -48,6 +49,33 @@ def create_scenario(
     return scenario
 
 
-@router.get("", response_model=list[ScenarioOut])
-def list_scenarios(db: Session = Depends(get_db), _: Employee = Depends(current_user)) -> list[Scenario]:
-    return db.query(Scenario).all()
+class CatalogItemOut(ScenarioOut):
+    my_best_score: int | None
+    in_progress_attempt_id: str | None
+
+
+@router.get("", response_model=list[CatalogItemOut])
+def list_scenarios(db: Session = Depends(get_db), user: Employee = Depends(current_user)) -> list[CatalogItemOut]:
+    """Published scenarios with the caller's own progress (never anyone else's)."""
+    bests = dict(
+        db.execute(select(ScenarioBest.scenario_id, ScenarioBest.best_score).where(ScenarioBest.employee_id == user.id)).all()
+    )
+    in_progress: dict[str, str] = {}
+    for scenario_id, attempt_id in db.execute(
+        select(Attempt.scenario_id, Attempt.id)
+        .where(Attempt.employee_id == user.id, Attempt.status == AttemptStatus.in_progress)
+        .order_by(Attempt.started_at)
+    ):
+        in_progress[scenario_id] = attempt_id
+    scenarios = db.scalars(select(Scenario).where(Scenario.version > 0).order_by(Scenario.created_at))
+    return [
+        CatalogItemOut(
+            id=s.id,
+            title=s.title,
+            description=s.description,
+            version=s.version,
+            my_best_score=bests.get(s.id),
+            in_progress_attempt_id=in_progress.get(s.id),
+        )
+        for s in scenarios
+    ]
