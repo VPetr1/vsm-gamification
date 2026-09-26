@@ -1,0 +1,5 @@
+# Keep LF in files read inside Linux containers, even on Windows checkouts.
+*.conf text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.py text eol=lf

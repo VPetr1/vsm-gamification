@@ -1,29 +1,49 @@
+# docker compose up --build  ->  http://localhost:8080 (app), http://localhost:8000/docs (API docs)
+# Settings come from .env (see .env.example); every value has a safe local default.
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: vsm
-      POSTGRES_PASSWORD: vsm
-      POSTGRES_DB: vsm
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-vsm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vsm-local-only}
+      POSTGRES_DB: ${POSTGRES_DB:-vsm}
     volumes:
       - vsm_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vsm"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vsm} -d ${POSTGRES_DB:-vsm}"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+    restart: unless-stopped
 
   backend:
     build: ./backend
     environment:
-      DATABASE_URL: postgresql://vsm:vsm@postgres:5432/vsm
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vsm}:${POSTGRES_PASSWORD:-vsm-local-only}@postgres:5432/${POSTGRES_DB:-vsm}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-vsm-demo}
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-12}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   vsm_pgdata:
