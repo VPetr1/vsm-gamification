@@ -93,11 +93,13 @@ def seed(db: Session) -> None:
 
     for data in scenarios:
         existing = db.query(Scenario).filter_by(title=data["title"]).first()
+        tags = data.get("tags", [])
         if existing is None:
-            db.add(Scenario(title=data["title"], description=data["description"], graph=data["graph"]))
-        elif existing.graph != data["graph"] or existing.description != data["description"]:
+            db.add(Scenario(title=data["title"], description=data["description"], tags=tags, graph=data["graph"]))
+        elif existing.graph != data["graph"] or existing.description != data["description"] or existing.tags != tags:
             existing.graph = data["graph"]
             existing.description = data["description"]
+            existing.tags = tags
             existing.version += 1
 
     seed_accounts(db, settings.demo_password)

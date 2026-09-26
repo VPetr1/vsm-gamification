@@ -54,6 +54,7 @@ def _record(db: Session, attempt: Attempt, result: StepResult, now: datetime) ->
         safety_delta=result.safety_delta,
         loyalty_after=result.loyalty_after,
         safety_after=result.safety_after,
+        assessment=result.assessment,
     )
     db.add(log)
     return log

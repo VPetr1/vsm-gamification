@@ -56,6 +56,8 @@ class Scenario(Base):
     title: Mapped[str] = mapped_column(String(300))
     description: Mapped[str] = mapped_column(Text, default="")
     graph: Mapped[dict] = mapped_column(JSON)
+    # Catalog tags; competency ids among them drive recommendations.
+    tags: Mapped[list] = mapped_column(JSON, default=list)
     version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
@@ -82,6 +84,8 @@ class Attempt(Base):
     loyalty: Mapped[int] = mapped_column(Integer, default=50)
     safety: Mapped[int] = mapped_column(Integer, default=50)
     flags: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Running competency totals {id: {"earned", "max"}}; see gamification/competencies.py.
+    assessment: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     status: Mapped[AttemptStatus] = mapped_column(
         Enum(AttemptStatus, name="attempt_status"), default=AttemptStatus.in_progress
     )
@@ -117,6 +121,7 @@ class ChoiceLog(Base):
     safety_delta: Mapped[int] = mapped_column(Integer, default=0)
     loyalty_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
     safety_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    assessment: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
     attempt: Mapped[Attempt] = relationship(back_populates="logs")
