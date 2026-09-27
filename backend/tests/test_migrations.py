@@ -128,3 +128,24 @@ def test_upgrade_rescores_finished_attempts_relative_to_the_scenario(tmp_path):
     engine.dispose()
     assert [tuple(r) for r in rows] == [("a1", 50, 50), ("a2", 100, 50), ("a3", 0, 0)]
     assert tuple(best) == (100, "a2")
+
+
+def test_downgrade_drops_scenario_achievements_the_old_schema_cannot_hold(tmp_path):
+    url = f"sqlite:///{tmp_path / 'data.db'}"
+    upgrade(url)
+    engine = create_engine(url)
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO employees (id, full_name, depot, brigade, created_at, role, is_synthetic, failed_logins)"
+                          " VALUES ('e1', 'Анна', 'Д', 'Б', '2026-09-25 10:00:00', 'conductor', 0, 0)"))
+        for aid in ("first_trip", "s:" + "x" * 36 + ":calm_carriage"):
+            conn.execute(text("INSERT INTO employee_achievements (id, employee_id, achievement_id, awarded_at)"
+                              " VALUES (:id, 'e1', :aid, '2026-09-25 10:00:00')"), {"id": aid[:36], "aid": aid})
+    engine.dispose()
+
+    command.downgrade(alembic_config(url), "0009")
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        left = conn.execute(text("SELECT achievement_id FROM employee_achievements")).scalars().all()
+    engine.dispose()
+    assert left == ["first_trip"]

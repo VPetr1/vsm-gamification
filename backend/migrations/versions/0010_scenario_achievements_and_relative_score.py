@@ -55,7 +55,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Scores stay in the relative scale; only the schema is reverted.
+    # Scores stay in the relative scale; only the schema is reverted. The old schema knows only
+    # built-in achievements, so those defined in scenarios ("s:<scenario>:<id>") are removed.
+    op.execute("DELETE FROM employee_achievements WHERE achievement_id LIKE 's:%'")
     with op.batch_alter_table("employee_achievements") as batch:
         batch.drop_column("icon")
         batch.drop_column("description")
