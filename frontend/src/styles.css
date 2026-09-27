@@ -1623,6 +1623,14 @@ a {
   flex-wrap: wrap;
 }
 
+textarea {
+  font: inherit;
+}
+
+textarea[id$="-raw"] {
+  font-family: ui-monospace, Menlo, monospace;
+}
+
 .choice-editor textarea,
 .node-editor textarea,
 .graph-settings textarea {

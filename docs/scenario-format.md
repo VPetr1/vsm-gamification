@@ -73,8 +73,9 @@
 | `nodes` | да | объект `id → узел`, непустой |
 | `initial` | нет | начальные шкалы `{"loyalty": 0..100, "safety": 0..100}`; по умолчанию 50/50 |
 | `flags` | нет | объявление флагов попытки: `имя → значение по умолчанию (true/false)` |
-| `awards` | нет | достижения за сценарий: `[{"achievement": "diplomat", "when": условие}]`, проверяются на итоговом состоянии |
-| `visual` | нет | персонажи сцены: `{"characters": {"man": {"name", "figure": man/woman/passenger, "pose": sitting/standing, "position": left/center/right}}}` |
+| `awards` | нет | встроенные достижения за сценарий: `[{"achievement": "diplomat", "when": условие}]`, проверяются на итоговом состоянии |
+| `achievements` | нет | свои достижения сценария: `[{"id", "title", "description"?, "icon"?, "when"}]` (см. [scoring.md](scoring.md)) |
+| `visual` | нет | сцена: `{"background"?, "characters": {"id": персонаж}}` (см. «Визуальные метаданные») |
 
 Теги (`tags` рядом с `title`) — список строк; идентификаторы компетенций среди них (`communication`, `safety`,
 `first_aid`, `stress_resistance`) используются в рекомендациях.
@@ -88,7 +89,7 @@
 | `timer_seconds` | нет | целое 5..600; отсутствует или `null` — шаг без таймера |
 | `timeout` | если есть таймер | исход при истечении времени (см. «Исход»); без таймера запрещён |
 | `debrief` | нет | урок шага для разбора: как было правильно поступить |
-| `visual` | нет | сцена узла: `speaker`, `moods` `[{"character", "mood", "when"?}]`, `props` `[{"id": suitcase/spill, "when"?}]` |
+| `visual` | нет | сцена узла: `speaker`, `background`, `cast`, `moods`, `props` (см. «Визуальные метаданные») |
 
 ### Вариант = исход + отображение
 
@@ -112,8 +113,11 @@
 
 ### Финал
 
-`{"text", "is_ending": true, "ending_summary", "outcome"?, "visual"?}` — без вариантов и таймера. `outcome` —
-машинный код финала для интерфейса и аналитики (`calm_resolution`, `resolved_with_dissatisfaction`, `escalated_to_senior`).
+`{"text", "is_ending": true, "ending_summary", "outcome"?, "outcome_label"?, "outcome_tone"?, "visual"?}` — без
+вариантов и таймера. `outcome` — машинный код финала для интерфейса и аналитики (`calm_resolution`,
+`resolved_with_dissatisfaction`, `escalated_to_senior`) или `custom` — свой тип финала: тогда `outcome_label`
+(название до 60 символов) обязателен, а `outcome_tone` — окраска `good`/`neutral`/`bad` (по умолчанию `neutral`).
+Пример — финал «Осложнение» в «Пассажиру стало плохо».
 
 ## Визуальные метаданные
 
@@ -121,6 +125,21 @@
 присутствующих персонажей с настроением и видимые предметы, — но не условия. Настроение без правила следует шкале
 лояльности (≥75 доволен, ≥55 спокоен, ≥40 встревожен, ≥25 расстроен, иначе раздражён). Логика интерфейса не
 привязана к идентификаторам узлов.
+
+| где | поле | значения |
+|---|---|---|
+| граф, персонаж | `figure` (роль) | `man`, `woman`, `passenger`, `elderly`, `child`, `business`, `chief` (начальник поезда), `conductor` (коллега-проводник), `medic` |
+| граф, персонаж | `gender` | `m`, `f`, `n` — для подписи настроения («спокоен/спокойна»); по умолчанию по роли |
+| граф, персонаж | `color` | цвет одежды: `blue`, `red`, `green`, `grey`, `purple`, `orange`, `teal`, `brown` |
+| граф, персонаж; узел, `cast` | `pose` | `sitting`, `standing`, `unwell` (плохо, полулёжа), `pointing`, `hands_on_hips` |
+| граф, персонаж; узел, `cast` | `position` | `far_left`, `left`, `center`, `right`, `far_right` |
+| граф; узел | `background` | `standard`, `business`, `vestibule` (тамбур); узел переопределяет граф |
+| узел | `cast` | `[{"character", "pose"?, "position"?, "when"?}]` — кто в кадре; без `cast` в кадре все персонажи, с ним — только те, у кого сработало правило (первое подходящее) |
+| узел | `moods` | `[{"character", "mood", "when"?}]`, `mood`: `happy`, `calm`, `worried`, `scared`, `upset`, `angry` |
+| узел | `props` | `[{"id", "when"?}]`, `id`: `suitcase`, `spill`, `first_aid_kit`, `water`, `phone`, `stroller`, `bag` |
+
+Пример — «Пассажиру стало плохо»: начальник поезда в кадре только при флаге `senior_called`, медсестра — в узле
+`medic`, пассажир в позе `unwell`, пока ему не станет лучше.
 
 ## Условия
 
