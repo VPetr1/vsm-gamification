@@ -115,6 +115,7 @@ TEST_DATABASE_URL=postgresql://vsm:vsm@localhost:5432/vsm_test python -m pytest 
 - [docs/scoring.md](docs/scoring.md) — результат, опыт, уровни, достижения, компетенции, рекомендации.
 - [docs/frontend-api.md](docs/frontend-api.md) — API с реальными примерами запросов и ответов; Swagger — `/docs`.
 - [docs/demo.md](docs/demo.md) — маршрут демонстрации.
+- [docs/qa.md](docs/qa.md) — вероятные вопросы жюри с ответами и ссылками на код, сценарии «живого изменения».
 
 ## Безопасность и данные
 
