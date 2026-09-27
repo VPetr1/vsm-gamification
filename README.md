@@ -110,6 +110,7 @@ TEST_DATABASE_URL=postgresql://vsm:vsm@localhost:5432/vsm_test python -m pytest 
 
 ## Документация
 
+- [docs/guide.md](docs/guide.md) — подробное руководство по проекту для команды: как всё устроено и где что менять.
 - [docs/architecture.md](docs/architecture.md) — компоненты, последовательность шага, модель данных, масштабирование.
 - [docs/scenario-format.md](docs/scenario-format.md) — формат сценария, условия, порядок применения эффектов, валидатор.
 - [docs/scoring.md](docs/scoring.md) — результат, опыт, уровни, достижения, компетенции, рекомендации.
