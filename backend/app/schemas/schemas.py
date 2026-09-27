@@ -12,6 +12,8 @@ class CharacterOut(BaseModel):
     id: str
     name: str
     figure: str
+    gender: str = "n"
+    color: str | None = None
     pose: str
     position: str
     mood: str
@@ -19,6 +21,7 @@ class CharacterOut(BaseModel):
 
 class NodeVisualOut(BaseModel):
     speaker: str | None
+    background: str = "standard"
     characters: list[CharacterOut]
     props: list[str]
 

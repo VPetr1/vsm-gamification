@@ -18,8 +18,9 @@ EFFECT_LIMIT = 100
 MAX_CONDITION_DEPTH = 8
 
 GRAPH_KEYS = {"start_node", "nodes", "initial", "flags", "awards", "achievements", "visual"}
-CHARACTER_KEYS = {"name", "figure", "pose", "position"}
-NODE_VISUAL_KEYS = {"speaker", "moods", "props"}
+CHARACTER_KEYS = {"name", "figure", "gender", "color", "pose", "position"}
+NODE_VISUAL_KEYS = {"speaker", "background", "cast", "moods", "props"}
+CAST_KEYS = {"character", "pose", "position", "when"}
 AWARD_KEYS = {"achievement", "when"}
 CUSTOM_ACHIEVEMENT_KEYS = {"id", "title", "description", "icon", "when"}
 ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,59}$")
@@ -190,12 +191,15 @@ class _Checker:
         if not isinstance(visual, dict):
             self.error("graph.visual", "must be an object")
             return
-        self.unknown_keys(visual, {"characters"}, "graph.visual")
+        self.unknown_keys(visual, {"characters", "background"}, "graph.visual")
+        if "background" in visual and visual["background"] not in vis.BACKGROUNDS:
+            self.error("graph.visual.background", f"must be one of {sorted(vis.BACKGROUNDS)}")
         characters = visual.get("characters", {})
         if not isinstance(characters, dict):
             self.error("graph.visual.characters", "must be an object of id -> character")
             return
-        allowed = {"figure": vis.FIGURES, "pose": vis.POSES, "position": vis.POSITIONS}
+        allowed = {"figure": vis.FIGURES, "gender": vis.GENDERS, "color": vis.COLORS, "pose": vis.POSES,
+                   "position": vis.POSITIONS}
         for cid, c in characters.items():
             path = f"graph.visual.characters.{cid}"
             if not isinstance(c, dict):
@@ -216,6 +220,9 @@ class _Checker:
         self.unknown_keys(visual, NODE_VISUAL_KEYS, path)
         if "speaker" in visual and visual["speaker"] not in self.characters:
             self.error(f"{path}.speaker", "must be a character declared in graph.visual.characters")
+        if "background" in visual and visual["background"] not in vis.BACKGROUNDS:
+            self.error(f"{path}.background", f"must be one of {sorted(vis.BACKGROUNDS)}")
+        self.check_cast(visual.get("cast", []), f"{path}.cast")
         for key, id_key, allowed in (("moods", "character", None), ("props", "id", vis.PROPS)):
             rules = visual.get(key, [])
             if not isinstance(rules, list):
@@ -236,6 +243,24 @@ class _Checker:
                     self.error(f"{rpath}.id", f"must be one of {sorted(allowed)}")
                 if "when" in rule:
                     self.check_condition(rule["when"], f"{rpath}.when", depth=0)
+
+    def check_cast(self, cast, path: str) -> None:
+        if not isinstance(cast, list):
+            self.error(path, "must be a list")
+            return
+        for i, rule in enumerate(cast):
+            rpath = f"{path}[{i}]"
+            if not isinstance(rule, dict):
+                self.error(rpath, "must be an object")
+                continue
+            self.unknown_keys(rule, CAST_KEYS, rpath)
+            if rule.get("character") not in self.characters:
+                self.error(f"{rpath}.character", "must be a declared character")
+            for key, values in (("pose", vis.POSES), ("position", vis.POSITIONS)):
+                if key in rule and rule[key] not in values:
+                    self.error(f"{rpath}.{key}", f"must be one of {sorted(values)}")
+            if "when" in rule:
+                self.check_condition(rule["when"], f"{rpath}.when", depth=0)
 
     def check_node(self, node, path: str) -> None:
         if not isinstance(node, dict):
