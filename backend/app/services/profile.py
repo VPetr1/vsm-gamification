@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from app.gamification.rules import ACHIEVEMENTS, level_for
+from app.gamification.rules import ACHIEVEMENTS, custom_achievement_id, level_for
 from app.models.models import (
     Attempt,
     AttemptStatus,
@@ -29,21 +29,36 @@ def level_view(xp: int) -> dict:
 
 
 def achievements_view(db: Session, employee_id: str) -> list[dict]:
+    """Built-in achievements, then those defined in published scenarios, then earned ones whose
+    scenario no longer defines them (their title and icon were copied when awarded)."""
     owned = {
         row.achievement_id: row
         for row in db.scalars(select(EmployeeAchievement).where(EmployeeAchievement.employee_id == employee_id))
     }
-    return [
-        {
-            "id": a.id,
-            "title": a.title,
-            "description": a.description,
-            "earned": a.id in owned,
-            "awarded_at": owned[a.id].awarded_at if a.id in owned else None,
-            "attempt_id": owned[a.id].attempt_id if a.id in owned else None,
+
+    def item(aid: str, title: str, description: str, icon: str, scenario_title: str | None) -> dict:
+        row = owned.get(aid)
+        return {
+            "id": aid,
+            "title": title,
+            "description": description,
+            "icon": icon,
+            "scenario_title": scenario_title,
+            "earned": row is not None,
+            "awarded_at": row.awarded_at if row else None,
+            "attempt_id": row.attempt_id if row else None,
         }
-        for a in ACHIEVEMENTS.values()
-    ]
+
+    items = [item(a.id, a.title, a.description, a.icon, None) for a in ACHIEVEMENTS.values()]
+    for scenario in published_scenarios(db):
+        for a in (scenario.graph or {}).get("achievements", []):
+            aid = custom_achievement_id(scenario.id, a["id"])
+            items.append(item(aid, a["title"], a.get("description", ""), a.get("icon", "medal"), scenario.title))
+    listed = {i["id"] for i in items}
+    for aid, row in owned.items():
+        if aid not in listed:
+            items.append(item(aid, row.title or aid, row.description or "", row.icon or "medal", None))
+    return items
 
 
 def published_scenarios(db: Session) -> list[Scenario]:

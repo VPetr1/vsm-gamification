@@ -32,12 +32,12 @@ def test_progress_and_incremental_attempt_export(anon, key, login_as, metod, clo
 
     progress = anon.get("/integrations/progress", headers=key).json()
     row = next(p for p in progress if p["full_name"] == "Анна")
-    assert (row["xp"], row["level"], row["achievements"]) == (58, 2, ["diplomat", "first_trip"])
+    assert (row["xp"], row["level"], row["achievements"]) == (100, 2, ["diplomat", "first_trip"])
     assert {c["id"]: c["percent"] for c in row["competencies"]}["first_aid"] is None
     assert all(p["full_name"] != "Сотрудник metodist" for p in progress)
 
     all_attempts = anon.get("/integrations/attempts", headers=key).json()
-    assert [a["score"] for a in all_attempts] == [58, 48]
+    assert [a["score"] for a in all_attempts] == [100, 50]
     later = anon.get("/integrations/attempts", headers=key, params={"finished_after": all_attempts[0]["finished_at"]}).json()
     assert [a["attempt_id"] for a in later] == [all_attempts[1]["attempt_id"]]
     assert first["attempt_id"] == all_attempts[0]["attempt_id"]

@@ -94,3 +94,37 @@ def test_upgrade_freezes_a_snapshot_for_attempts_already_in_progress(tmp_path):
     assert json.loads(row.graph_snapshot) == {"start_node": "n1", "nodes": {}}
     assert (row.scenario_version, version) == (1, 1)
     assert json.loads(row.flags) == {}
+
+
+def test_upgrade_rescores_finished_attempts_relative_to_the_scenario(tmp_path):
+    """Seat recline: raw results 38..58. Old scores 48, 58, 38 become 50, 100, 0; XP and bests follow."""
+    from app.scenarios.library import load_scenario
+
+    url = f"sqlite:///{tmp_path / 'data.db'}"
+    command.upgrade(alembic_config(url), "0009")
+    graph = json.dumps(load_scenario("seat_recline")["graph"])
+    engine = create_engine(url)
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO employees (id, full_name, depot, brigade, created_at) VALUES ('e1', 'Анна', 'Д', 'Б', '2026-09-25 10:00:00')"))
+        conn.execute(text("INSERT INTO scenarios (id, title, description, created_at, tags) VALUES ('s1', 'Кресло', '', '2026-09-25 10:00:00', '[]')"))
+        for aid, loyalty, safety, old, minute in [("a1", 40, 55, 48, 1), ("a2", 60, 55, 58, 2), ("a3", 35, 40, 38, 3)]:
+            conn.execute(
+                text(
+                    "INSERT INTO attempts (id, employee_id, scenario_id, current_node, loyalty, safety, status, node_shown_at,"
+                    " started_at, finished_at, flags, graph_snapshot, score, xp_gained)"
+                    " VALUES (:id, 'e1', 's1', 'end', :l, :s, 'finished', :t, :t, :t, '{}', :g, :old, 0)"
+                ),
+                {"id": aid, "l": loyalty, "s": safety, "t": f"2026-09-25 10:0{minute}:00", "g": graph, "old": old},
+            )
+        conn.execute(text("INSERT INTO scenario_bests VALUES ('b1', 'e1', 's1', 58, 'a2', '2026-09-25 10:02:00')"))
+    engine.dispose()
+
+    upgrade(url)
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        rows = conn.execute(text("SELECT id, score, xp_gained FROM attempts ORDER BY id")).all()
+        best = conn.execute(text("SELECT best_score, attempt_id FROM scenario_bests")).one()
+    engine.dispose()
+    assert [tuple(r) for r in rows] == [("a1", 50, 50), ("a2", 100, 50), ("a3", 0, 0)]
+    assert tuple(best) == (100, "a2")

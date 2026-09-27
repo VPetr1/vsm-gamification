@@ -10,9 +10,10 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.gamification.rules import ACHIEVEMENTS, attempt_score, level_for
+from app.gamification.rules import ACHIEVEMENTS, custom_achievement_id, level_for
 from app.models.models import Attempt, Employee, EmployeeAchievement, Notification, ScenarioBest
 from app.scenarios.conditions import evaluate
+from app.scenarios.scoring import attempt_score
 
 
 def total_xp(db: Session, employee_id: str) -> int:
@@ -30,7 +31,7 @@ def apply_rewards(db: Session, attempt: Attempt, now: datetime) -> None:
     # claim the same improvement or the same achievement.
     db.execute(select(Employee.id).where(Employee.id == attempt.employee_id).with_for_update())
 
-    score = attempt_score(attempt.loyalty, attempt.safety)
+    score = attempt_score(attempt.graph_snapshot, attempt.loyalty, attempt.safety)
     xp_before = total_xp(db, attempt.employee_id)
     best = db.execute(
         select(ScenarioBest)
@@ -62,14 +63,39 @@ def apply_rewards(db: Session, attempt: Attempt, now: datetime) -> None:
     owned = set(
         db.scalars(select(EmployeeAchievement.achievement_id).where(EmployeeAchievement.employee_id == attempt.employee_id))
     )
-    candidates = ["first_trip"]
+    # (id, title, description, icon): built-ins first, then the scenario's own achievements.
+    candidates = [ACHIEVEMENTS["first_trip"]]
     for award in attempt.graph_snapshot.get("awards", []):
-        if evaluate(award["when"], attempt):
-            candidates.append(award["achievement"])
-    new = [a for a in dict.fromkeys(candidates) if a not in owned and a in ACHIEVEMENTS]
-    for achievement_id in new:
-        db.add(EmployeeAchievement(employee_id=attempt.employee_id, achievement_id=achievement_id,
-                                   attempt_id=attempt.id, awarded_at=now))
-        achievement = ACHIEVEMENTS[achievement_id]
-        _notify(db, attempt.employee_id, "achievement", f"Достижение «{achievement.title}»",
-                achievement.description, f"/attempts/{attempt.id}/result", now)
+        if award["achievement"] in ACHIEVEMENTS and evaluate(award["when"], attempt):
+            candidates.append(ACHIEVEMENTS[award["achievement"]])
+    granted: set[str] = set()
+    for a in candidates:
+        _grant(db, attempt, owned | granted, a.id, a.title, a.description, None, now)
+        granted.add(a.id)
+    for custom in attempt.graph_snapshot.get("achievements", []):
+        if evaluate(custom["when"], attempt):
+            aid = custom_achievement_id(attempt.scenario_id, custom["id"])
+            _grant(db, attempt, owned | granted, aid, custom["title"], custom.get("description", ""),
+                   custom.get("icon", "medal"), now)
+            granted.add(aid)
+
+
+def _grant(db: Session, attempt: Attempt, owned: set[str], achievement_id: str, title: str, description: str,
+           icon: str | None, now: datetime) -> None:
+    if achievement_id in owned:
+        return
+    # Built-ins keep title/description/icon in code (icon None); scenario achievements store a copy.
+    custom = icon is not None
+    db.add(EmployeeAchievement(employee_id=attempt.employee_id, achievement_id=achievement_id, attempt_id=attempt.id,
+                               awarded_at=now, title=title if custom else None,
+                               description=description if custom else None, icon=icon))
+    _notify(db, attempt.employee_id, "achievement", f"Достижение «{title}»", description,
+            f"/attempts/{attempt.id}/result", now)
+
+
+def achievement_display(row: EmployeeAchievement) -> dict:
+    """id, title and icon of an awarded achievement, built-in or defined in a scenario."""
+    builtin = ACHIEVEMENTS.get(row.achievement_id)
+    if builtin is not None:
+        return {"id": builtin.id, "title": builtin.title, "icon": builtin.icon}
+    return {"id": row.achievement_id, "title": row.title or row.achievement_id, "icon": row.icon or "medal"}

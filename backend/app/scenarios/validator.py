@@ -4,10 +4,12 @@ Every problem is collected (not only the first) and reported with a JSON-like pa
 e.g. "nodes.n1.choices[0].effects.loyalty: must be an integer -100..100".
 """
 
+import re
 from collections import deque
 
 from app.gamification.competencies import COMPETENCIES, MAX_POINTS
-from app.gamification.rules import ACHIEVEMENTS
+from app.gamification.rules import ACHIEVEMENT_ICONS, ACHIEVEMENTS
+from app.scenarios import scoring
 from app.scenarios import visual as vis
 from app.scenarios.conditions import LEGACY_MIN, OPERATORS, SCALES
 
@@ -15,10 +17,12 @@ TIMER_MIN, TIMER_MAX = 5, 600
 EFFECT_LIMIT = 100
 MAX_CONDITION_DEPTH = 8
 
-GRAPH_KEYS = {"start_node", "nodes", "initial", "flags", "awards", "visual"}
+GRAPH_KEYS = {"start_node", "nodes", "initial", "flags", "awards", "achievements", "visual"}
 CHARACTER_KEYS = {"name", "figure", "pose", "position"}
 NODE_VISUAL_KEYS = {"speaker", "moods", "props"}
 AWARD_KEYS = {"achievement", "when"}
+CUSTOM_ACHIEVEMENT_KEYS = {"id", "title", "description", "icon", "when"}
+ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,59}$")
 STEP_NODE_KEYS = {"text", "is_ending", "timer_seconds", "timeout", "choices", "debrief", "visual"}
 ENDING_NODE_KEYS = {"text", "is_ending", "ending_summary", "outcome", "visual"}
 OUTCOME_KEYS = {"effects", "set_flags", "next_node", "transitions", "explanation", "assessment"}
@@ -76,6 +80,7 @@ class _Checker:
         self.check_initial(graph.get("initial"))
         self.check_flags(graph.get("flags"))
         self.check_awards(graph.get("awards"))
+        self.check_custom_achievements(graph.get("achievements"))
         self.characters: set[str] = set()
         self.check_characters(graph.get("visual"))
 
@@ -95,6 +100,11 @@ class _Checker:
         # Graph-level checks rely on a well-formed structure, so they run only if everything above passed.
         if not self.errors:
             self.check_paths(nodes, start)
+        if not self.errors:
+            try:
+                scoring.score_range(graph)
+            except scoring.ScenarioTooLarge:
+                self.error("graph", f"сценарий слишком разветвлён: больше {scoring.MAX_STATES} состояний, результат не посчитать")
         return self.errors
 
     def check_initial(self, initial) -> None:
@@ -140,6 +150,38 @@ class _Checker:
                 self.error(f"{path}.when", "a condition is required")
             else:
                 self.check_condition(award["when"], f"{path}.when", depth=0)
+
+    def check_custom_achievements(self, achievements) -> None:
+        """Achievements defined by the scenario itself; granted like awards, on the final state."""
+        if achievements is None:
+            return
+        if not isinstance(achievements, list):
+            self.error("graph.achievements", "must be a list")
+            return
+        seen: set[str] = set()
+        for i, a in enumerate(achievements):
+            path = f"graph.achievements[{i}]"
+            if not isinstance(a, dict):
+                self.error(path, "must be an object")
+                continue
+            self.unknown_keys(a, CUSTOM_ACHIEVEMENT_KEYS, path)
+            aid = a.get("id")
+            if not (isinstance(aid, str) and ID_PATTERN.match(aid)):
+                self.error(f"{path}.id", "must be a latin identifier: a letter, then letters, digits or _ (up to 60)")
+            elif aid in seen:
+                self.error(f"{path}.id", f"duplicate achievement id {aid!r}")
+            else:
+                seen.add(aid)
+            if not (_is_text(a.get("title")) and len(a["title"]) <= 120):
+                self.error(f"{path}.title", "must be a non-empty string up to 120 characters")
+            if "description" in a and not isinstance(a["description"], str):
+                self.error(f"{path}.description", "must be a string")
+            if a.get("icon", "medal") not in ACHIEVEMENT_ICONS:
+                self.error(f"{path}.icon", f"must be one of {list(ACHIEVEMENT_ICONS)}")
+            if "when" not in a:
+                self.error(f"{path}.when", "a condition is required")
+            else:
+                self.check_condition(a["when"], f"{path}.when", depth=0)
 
     def check_characters(self, visual) -> None:
         if visual is None:

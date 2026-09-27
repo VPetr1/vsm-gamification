@@ -38,15 +38,15 @@ def test_xp_counts_only_improvements_over_the_best_result(login_as, publish, clo
     anna = login_as("anna")
     demo = publish(DEMO)
 
-    first = reward(anna, play(anna, clock, demo, "c2"))  # 40/55 -> 48
-    worse = reward(anna, play(anna, clock, demo, "c3"))  # 35/40 -> 38
-    better = reward(anna, play(anna, clock, demo, "c1"))  # 60/55 -> 58
+    first = reward(anna, play(anna, clock, demo, "c2"))  # 40/55 -> raw 48 of 38..58 -> 50
+    worse = reward(anna, play(anna, clock, demo, "c3"))  # 35/40 -> raw 38, the worst ending -> 0
+    better = reward(anna, play(anna, clock, demo, "c1"))  # 60/55 -> raw 58, the best ending -> 100
 
-    assert (first["score"], first["xp_gained"]) == (48, 48)
-    assert (worse["score"], worse["xp_gained"], worse["best_score"]) == (38, 0, 48)
-    assert (better["score"], better["xp_gained"], better["best_score"]) == (58, 10, 58)
+    assert (first["score"], first["xp_gained"]) == (50, 50)
+    assert (worse["score"], worse["xp_gained"], worse["best_score"]) == (0, 0, 50)
+    assert (better["score"], better["xp_gained"], better["best_score"]) == (100, 50, 100)
     profile = anna.get("/me/profile").json()
-    assert profile["xp"] == 58  # sum of best results, not of all attempts
+    assert profile["xp"] == 100  # sum of best results, not of all attempts
 
 
 def test_replaying_the_same_result_never_adds_xp(login_as, publish, clock):
@@ -54,7 +54,7 @@ def test_replaying_the_same_result_never_adds_xp(login_as, publish, clock):
     demo = publish(DEMO)
     for _ in range(5):
         play(anna, clock, demo, "c1")
-    assert anna.get("/me/profile").json()["xp"] == 58
+    assert anna.get("/me/profile").json()["xp"] == 100
 
 
 def test_achievements_are_awarded_once(login_as, publish, clock, session_factory):
@@ -77,8 +77,8 @@ def test_timeout_finish_resolved_on_restore_rewards_exactly_once(login_as, publi
     anna.post(f"/attempts/{started['attempt_id']}/choice", json={"choice_id": None, "expected_step": 0})
 
     assert first["status"] == "finished"
-    assert reward(anna, first) == {"score": 43, "xp_gained": 43, "best_score": 43,
-                                   "achievements": [{"id": "first_trip", "title": "Первый рейс"}]}
+    assert reward(anna, first) == {"score": 25, "xp_gained": 25, "best_score": 25,
+                                   "achievements": [{"id": "first_trip", "title": "Первый рейс", "icon": "medal"}]}
     with session_factory() as db:
         assert db.scalar(select(func.count()).select_from(ScenarioBest)) == 1
         assert db.scalar(select(func.count()).select_from(Notification).where(Notification.kind == "achievement")) == 1
@@ -102,7 +102,7 @@ def test_window_seat_achievements_follow_declared_rules(login_as, publish, clock
 def test_level_up_creates_a_notification(login_as, publish, clock):
     anna = login_as("anna")
     demo = publish(DEMO)
-    play(anna, clock, demo, "c1")  # 58 XP -> level 2
+    play(anna, clock, demo, "c1")  # 100 XP -> level 2
     profile = anna.get("/me/profile").json()
     assert profile["level"] == {"number": 2, "title": "Проводник", "min_xp": 50, "next_min_xp": 120}
     notes = anna.get("/me/notifications").json()
@@ -134,13 +134,13 @@ def test_leaderboard_scopes_and_fields(login_as, publish, clock):
     boris = login_as("boris", full_name="Борис", brigade="Бригада 1", depot="Депо Восток")
     vera = login_as("vera", full_name="Вера", brigade="Бригада 2", depot="Депо Восток")
     gleb = login_as("gleb", full_name="Глеб", brigade="Бригада 3", depot="Депо Запад")
-    play(anna, clock, demo, "c2")  # 48
-    play(boris, clock, demo, "c1")  # 58
-    play(vera, clock, demo, "c3")  # 38
-    play(gleb, clock, demo, "c1")  # 58
+    play(anna, clock, demo, "c2")  # 50
+    play(boris, clock, demo, "c1")  # 100
+    play(vera, clock, demo, "c3")  # 0
+    play(gleb, clock, demo, "c1")  # 100
 
     brigade = anna.get("/leaderboard?scope=brigade").json()
-    assert [(e["rank"], e["name"], e["xp"], e["is_me"]) for e in brigade["entries"]] == [(1, "Борис", 58, False), (2, "Анна", 48, True)]
+    assert [(e["rank"], e["name"], e["xp"], e["is_me"]) for e in brigade["entries"]] == [(1, "Борис", 100, False), (2, "Анна", 50, True)]
     assert set(brigade["entries"][0]) == {"rank", "name", "brigade", "depot", "level", "level_title", "xp", "completed", "is_me", "synthetic"}
 
     depot = anna.get("/leaderboard?scope=depot").json()
@@ -160,9 +160,9 @@ def test_history_and_catalog_show_own_progress(login_as, publish, clock):
 
     history = anna.get("/me/attempts").json()
     assert [h["status"] for h in history] == ["in_progress", "finished"]
-    assert history[1]["score"] == 58 and history[1]["outcome"] == "calm_resolution" and history[1]["xp_gained"] == 58
+    assert history[1]["score"] == 100 and history[1]["outcome"] == "calm_resolution" and history[1]["xp_gained"] == 100
 
     catalog = anna.get("/scenarios").json()
-    assert catalog[0]["my_best_score"] == 58
+    assert catalog[0]["my_best_score"] == 100
     assert catalog[0]["in_progress_attempt_id"] == running["attempt_id"]
     assert login_as("boris").get("/scenarios").json()[0]["my_best_score"] is None

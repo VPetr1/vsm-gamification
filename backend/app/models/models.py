@@ -169,9 +169,14 @@ class EmployeeAchievement(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"))
-    achievement_id: Mapped[str] = mapped_column(String(50))
+    # Built-in id ("diplomat") or "s:<scenario_id>:<id>" for an achievement defined in a scenario.
+    achievement_id: Mapped[str] = mapped_column(String(120))
     attempt_id: Mapped[str | None] = mapped_column(ForeignKey("attempts.id"), nullable=True)
     awarded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    # Copied from the scenario when awarded, so the profile still shows it after the scenario changes.
+    title: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    icon: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 
 class Notification(Base):

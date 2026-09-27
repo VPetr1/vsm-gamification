@@ -9,7 +9,6 @@ from app.core.db import get_db
 from sqlalchemy import select
 
 from app.gamification.competencies import COMPETENCIES
-from app.gamification.rules import ACHIEVEMENTS
 from app.services.competency import competency_view
 from app.models.models import Attempt, ChoiceLog, Employee, EmployeeAchievement, ScenarioBest
 from app.schemas.schemas import (
@@ -28,6 +27,7 @@ from app.schemas.schemas import (
 from app.scenarios.engine import DEFAULT_INITIAL, visible_choices
 from app.scenarios.visual import resolve as resolve_visual
 from app.services import attempts as service
+from app.services.rewards import achievement_display
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 
@@ -144,12 +144,12 @@ def _reward_out(db: Session, attempt: Attempt) -> RewardOut | None:
             ScenarioBest.employee_id == attempt.employee_id, ScenarioBest.scenario_id == attempt.scenario_id
         )
     )
-    earned = db.scalars(select(EmployeeAchievement.achievement_id).where(EmployeeAchievement.attempt_id == attempt.id))
+    earned = db.scalars(select(EmployeeAchievement).where(EmployeeAchievement.attempt_id == attempt.id))
     return RewardOut(
         score=attempt.score,
         xp_gained=attempt.xp_gained or 0,
         best_score=best if best is not None else attempt.score,
-        achievements=[{"id": a, "title": ACHIEVEMENTS[a].title} for a in earned if a in ACHIEVEMENTS],
+        achievements=[achievement_display(row) for row in earned],
     )
 
 
