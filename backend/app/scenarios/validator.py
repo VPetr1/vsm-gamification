@@ -24,7 +24,8 @@ AWARD_KEYS = {"achievement", "when"}
 CUSTOM_ACHIEVEMENT_KEYS = {"id", "title", "description", "icon", "when"}
 ID_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]{0,59}$")
 STEP_NODE_KEYS = {"text", "is_ending", "timer_seconds", "timeout", "choices", "debrief", "visual"}
-ENDING_NODE_KEYS = {"text", "is_ending", "ending_summary", "outcome", "visual"}
+ENDING_NODE_KEYS = {"text", "is_ending", "ending_summary", "outcome", "outcome_label", "outcome_tone", "visual"}
+OUTCOME_TONES = ("good", "neutral", "bad")
 OUTCOME_KEYS = {"effects", "set_flags", "next_node", "transitions", "explanation", "assessment"}
 CHOICE_KEYS = OUTCOME_KEYS | {"id", "text", "condition"}
 TRANSITION_KEYS = {"condition", "next_node"}
@@ -256,6 +257,12 @@ class _Checker:
                 self.error(f"{path}.ending_summary", "must be a non-empty string")
             if "outcome" in node and not _is_text(node["outcome"]):
                 self.error(f"{path}.outcome", "must be a non-empty string")
+            # A custom ending type carries its own label and tone; presets are labelled by the client.
+            label = node.get("outcome_label")
+            if (node.get("outcome") == "custom" or label is not None) and not (_is_text(label) and len(label) <= 60):
+                self.error(f"{path}.outcome_label", "a custom ending needs a label up to 60 characters")
+            if node.get("outcome_tone", "neutral") not in OUTCOME_TONES:
+                self.error(f"{path}.outcome_tone", f"must be one of {list(OUTCOME_TONES)}")
             return
 
         self.unknown_keys(node, STEP_NODE_KEYS, path)

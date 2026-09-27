@@ -171,6 +171,8 @@ def _result_out(attempt: Attempt, logs: list[ChoiceLog]) -> AttemptResultOut:
             text=ending["text"],
             summary=ending["ending_summary"],
             outcome=ending.get("outcome"),
+            outcome_label=ending.get("outcome_label"),
+            outcome_tone=ending.get("outcome_tone"),
         ),
         steps=[_result_step(graph["nodes"], log) for log in logs],
         competencies=competency_view(attempt.assessment or {}),

@@ -44,7 +44,8 @@ def test_result_lists_decisions_with_actual_deltas_and_explanations(client, cloc
     body = r.json()
     assert body["initial"] == {"loyalty": 95, "safety": 50}
     assert body["final"] == {"loyalty": 100, "safety": 20}
-    assert body["ending"] == {"node_id": "end", "text": "Поездка продолжается.", "summary": "Итог.", "outcome": "calm"}
+    assert body["ending"] == {"node_id": "end", "text": "Поездка продолжается.", "summary": "Итог.", "outcome": "calm",
+                              "outcome_label": None, "outcome_tone": None}
     assert body["started_at"] == "2026-09-25T12:00:00Z"
     assert body["finished_at"] == "2026-09-25T12:00:13Z"
 

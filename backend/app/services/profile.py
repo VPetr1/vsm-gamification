@@ -100,6 +100,7 @@ def history(db: Session, user: Employee) -> list[dict]:
     items = []
     for attempt, title in rows:
         ending = attempt.graph_snapshot["nodes"].get(attempt.current_node, {})
+        finished = attempt.status == AttemptStatus.finished
         items.append(
             {
                 "attempt_id": attempt.id,
@@ -111,14 +112,16 @@ def history(db: Session, user: Employee) -> list[dict]:
                 "finished_at": attempt.finished_at,
                 "score": attempt.score,
                 "xp_gained": attempt.xp_gained,
-                "outcome": ending.get("outcome") if attempt.status == AttemptStatus.finished else None,
+                "outcome": ending.get("outcome") if finished else None,
+                "outcome_label": ending.get("outcome_label") if finished else None,
+                "outcome_tone": ending.get("outcome_tone") if finished else None,
                 "synthetic": attempt.is_synthetic,
                 "competencies": [
                     {"id": c["id"], "title": c["title"], "earned": c["earned"], "max": c["max"], "percent": c["percent"]}
                     for c in _competency_view(attempt.assessment or {})
                     if c["percent"] is not None
                 ]
-                if attempt.status == AttemptStatus.finished
+                if finished
                 else [],
             }
         )

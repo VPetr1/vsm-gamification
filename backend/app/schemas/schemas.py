@@ -97,6 +97,8 @@ class EndingOut(BaseModel):
     text: str
     summary: str
     outcome: str | None
+    outcome_label: str | None = None
+    outcome_tone: str | None = None
 
 
 class RewardOut(BaseModel):
