@@ -98,7 +98,7 @@ export function ResultPage() {
             </div>
           </div>
           <p className="muted small">
-            Результат — среднее двух шкал на финале относительно лучшего и худшего возможного исхода сценария:
+            Результат - среднее двух шкал на финале относительно лучшего и худшего возможного исхода сценария:
             идеальное прохождение даёт 100. Опыт начисляется только за улучшение лучшего результата в этом сценарии.
           </p>
           {result.reward.achievements.length > 0 && (
@@ -127,7 +127,7 @@ export function ResultPage() {
               <p className="muted">Шаг {step.step}</p>
               <p className="situation">{step.situation}</p>
               <p className="decision">
-                {step.timed_out ? <strong>Время вышло — решение не принято</strong> : <strong>{step.choice_text}</strong>}
+                {step.timed_out ? <strong>Время вышло - решение не принято</strong> : <strong>{step.choice_text}</strong>}
               </p>
               <div className="chips">
                 <Delta label="Лояльность" value={step.loyalty_delta} />

@@ -87,7 +87,7 @@ export function PlayPage() {
 
       {last && (
         <p className={`reaction ${last.timed_out ? "reaction-timeout" : ""}`} aria-live="polite" key={play.animateKey}>
-          {last.timed_out ? "Время вышло — ситуация развивалась без вашего решения." : "Решение принято."}{" "}
+          {last.timed_out ? "Время вышло - ситуация развивалась без вашего решения." : "Решение принято."}{" "}
           <span className="muted">
             Лояльность {signed(last.loyalty_delta)}, безопасность {signed(last.safety_delta)}.
           </span>

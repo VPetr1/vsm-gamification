@@ -107,7 +107,7 @@ export function EditorListPage() {
                       {s.published ? <span className="chip chip-good">опубликован, v{s.version}</span> : <span className="chip">черновик</span>}
                       {s.published && s.has_unpublished_changes && <span className="chip chip-warn">есть неопубликованные правки</span>}
                     </td>
-                    <td className="small">{s.updated_at ? formatDateTime(s.updated_at) : "—"}</td>
+                    <td className="small">{s.updated_at ? formatDateTime(s.updated_at) : "-"}</td>
                   </tr>
                 ))}
               </tbody>

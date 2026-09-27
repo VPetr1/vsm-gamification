@@ -159,7 +159,7 @@ export function OutcomeEditor({ outcome, nodeIds, flags, onChange }: Props) {
             value={(outcome.next_node as string) ?? ""}
             onChange={(e) => onChange({ ...outcome, next_node: e.target.value })}
           >
-            {!nodeIds.includes(outcome.next_node as string) && <option value={(outcome.next_node as string) ?? ""}>— выберите —</option>}
+            {!nodeIds.includes(outcome.next_node as string) && <option value={(outcome.next_node as string) ?? ""}>- выберите -</option>}
             {nodeIds.map((id) => (
               <option key={id} value={id}>
                 {id}
@@ -186,7 +186,7 @@ export function OutcomeEditor({ outcome, nodeIds, flags, onChange }: Props) {
                   <label className="small inline">
                     → узел
                     <select value={(t.next_node as string) ?? ""} onChange={(e) => replace({ ...t, next_node: e.target.value })}>
-                      {!nodeIds.includes(t.next_node as string) && <option value="">— выберите —</option>}
+                      {!nodeIds.includes(t.next_node as string) && <option value="">- выберите -</option>}
                       {nodeIds.map((id) => (
                         <option key={id} value={id}>
                           {id}

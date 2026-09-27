@@ -14,7 +14,7 @@ export function Layout() {
       </a>
       <header className="app-header">
         <div className="container header-row">
-          <NavLink to="/" className="brand" aria-label="Рейс 400 — на главную">
+          <NavLink to="/" className="brand" aria-label="Рейс 400 - на главную">
             <span className="brand-mark" aria-hidden="true" />
             Рейс 400
           </NavLink>

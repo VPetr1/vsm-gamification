@@ -105,7 +105,7 @@ class EndingOut(BaseModel):
 
 
 class RewardOut(BaseModel):
-    score: int = Field(description="(final loyalty + final safety) / 2, halves rounded up")
+    score: int = Field(description="0-100 score normalized between the scenario snapshot's worst and best reachable raw ending scores; halves rounded up")
     xp_gained: int = Field(description="Improvement over the previous best in this scenario, never negative")
     best_score: int
     achievements: list[dict]

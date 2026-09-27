@@ -83,7 +83,7 @@ export function useAttemptPlay(attemptId: string, onUnauthorized: () => void) {
           autoPaused.current = true;
           setNotice({ text: `${err.message} Решение не засчитано.`, retry: true });
         } else if (err.code === "step_mismatch") {
-          setNotice({ text: "Этот шаг уже засчитан — показано актуальное состояние.", retry: false });
+          setNotice({ text: "Этот шаг уже засчитан - показано актуальное состояние.", retry: false });
           await refresh();
         } else if (err.code === "timer_not_expired") {
           // The device reached zero before the server did; re-read after a pause instead of hammering.

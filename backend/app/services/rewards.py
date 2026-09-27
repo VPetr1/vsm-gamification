@@ -1,7 +1,7 @@
 """Rewards for a finished attempt: score, XP (improvement only), level, achievements, notifications.
 
 Runs inside the transaction of the step that finished the attempt. That step can be committed
-only once (row lock + UNIQUE(attempt_id, step)), so rewards are granted exactly once — whether
+only once (row lock + UNIQUE(attempt_id, step)), so rewards are granted exactly once - whether
 the attempt ended by a choice, by a timeout, or by a timeout resolved on restore.
 """
 

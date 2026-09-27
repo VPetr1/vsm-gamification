@@ -43,9 +43,9 @@ export function ProfilePage() {
               Слабая оценённая компетенция: <strong>{p.weakest.title}</strong> ({p.weakest.percent}%).
             </p>
           ) : p.competencies.some((c) => c.percent !== null) ? (
-            <p className="muted">Все оценённые решения приняты верно — слабых компетенций нет.</p>
+            <p className="muted">Все оценённые решения приняты верно - слабых компетенций нет.</p>
           ) : (
-            <p className="muted">Оценок пока нет — завершите первый сценарий.</p>
+            <p className="muted">Оценок пока нет - завершите первый сценарий.</p>
           )}
         </section>
         <div className="stack">
@@ -94,11 +94,11 @@ export function ProfilePage() {
                         </Link>
                       )}
                     </td>
-                    <td>{h.score ?? "—"}</td>
-                    <td>{h.xp_gained === null ? "—" : `+${h.xp_gained}`}</td>
+                    <td>{h.score ?? "-"}</td>
+                    <td>{h.xp_gained === null ? "-" : `+${h.xp_gained}`}</td>
                     <td className="small">
                       {h.competencies.length === 0
-                        ? "—"
+                        ? "-"
                         : h.competencies.map((c) => `${c.title}: ${c.earned}/${c.max}`).join(", ")}
                     </td>
                   </tr>

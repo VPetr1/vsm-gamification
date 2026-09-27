@@ -25,7 +25,7 @@ export function LevelBar({ xp, level }: { xp: number; level: Level }) {
       <p className="muted small">
         {level.next_min_xp === null
           ? "Максимальный уровень."
-          : `До следующего уровня: ${level.next_min_xp - xp} опыта. Опыт — сумма лучших результатов по сценариям.`}
+          : `До следующего уровня: ${level.next_min_xp - xp} опыта. Опыт - сумма лучших результатов по сценариям.`}
       </p>
     </div>
   );

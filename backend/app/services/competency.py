@@ -62,7 +62,7 @@ def _recommend(db: Session, employee: Employee, latest: dict[str, Attempt], weak
         if tagged:
             return card(
                 tagged[0], "weak_new",
-                f"Слабая оценённая компетенция — «{weak['title']}» ({weak['percent']}%). Этот сценарий её тренирует.",
+                f"Слабая оценённая компетенция - «{weak['title']}» ({weak['percent']}%). Этот сценарий её тренирует.",
             )
     if unfinished:
         return card(unfinished[0], "new", "Вы ещё не проходили этот сценарий.")

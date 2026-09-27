@@ -59,7 +59,7 @@ export function HomePage() {
             {unfinished.map((h) => (
               <li key={h.attempt_id}>
                 <Link to={`/attempts/${h.attempt_id}`}>{h.scenario_title}</Link>
-                <span className="muted small"> — продолжить с места остановки</span>
+                <span className="muted small"> - продолжить с места остановки</span>
               </li>
             ))}
           </ul>

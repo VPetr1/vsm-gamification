@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import attempts, auth, editor, employees, errors, integrations, me, scenarios
 from app.core.config import settings
 
-app = FastAPI(title="Рейс 400 — тренажёр проводника ВСМ", version="0.2.0")
+app = FastAPI(title="Рейс 400 - тренажёр проводника ВСМ", version="0.2.0")
 
 # The web client is served from the same origin (nginx / Vite proxy), so CORS is off unless
 # CORS_ORIGINS explicitly lists trusted origins; a wildcard is never combined with cookies.

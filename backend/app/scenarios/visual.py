@@ -1,5 +1,5 @@
 """Optional scene metadata. The API sends only resolved values (who is present, their mood,
-visible props) — never the conditions — so the client cannot learn about hidden branches.
+visible props) - never the conditions - so the client cannot learn about hidden branches.
 
 Graph:  "visual": {"background": "standard",
                    "characters": {"man": {"name", "figure", "gender", "color", "pose", "position"}}}

@@ -253,7 +253,7 @@ export function EditorPage() {
           <span>Описание</span>
           <AutoTextarea value={draft.description} onChange={(e) => change({ ...draft, description: e.target.value })} />
         </label>
-        {graphErrors.length > 0 && <p className="field-error small">{graphErrors.length} ошибок уровня сценария — см. список выше.</p>}
+        {graphErrors.length > 0 && <p className="field-error small">{graphErrors.length} ошибок уровня сценария - см. список выше.</p>}
       </section>
 
       <GraphSettings graph={graph} onChange={setGraph} />

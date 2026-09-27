@@ -1,7 +1,7 @@
 """Attempt score relative to what the scenario allows: the best reachable ending scores 100, the worst 0.
 
 The raw score is the mean of the two scales at the ending. score_range explores every reachable
-state (node, scales, flags) — choices visible in that state plus the timeout branch — so hidden
+state (node, scales, flags) - choices visible in that state plus the timeout branch - so hidden
 choices never inflate the best, and loops terminate because each state is visited once.
 Formulas are documented in docs/scoring.md; keep the two in sync.
 """
