@@ -42,6 +42,8 @@ export type AchievementState = {
   id: string;
   title: string;
   description: string;
+  icon: string;
+  scenario_title: string | null;
   earned: boolean;
   awarded_at: string | null;
   attempt_id: string | null;
@@ -81,6 +83,8 @@ export type HistoryItem = {
   score: number | null;
   xp_gained: number | null;
   outcome: string | null;
+  outcome_label: string | null;
+  outcome_tone: string | null;
   synthetic: boolean;
   competencies: CompetencyScore[];
 };
@@ -118,13 +122,16 @@ export type VisualCharacter = {
   id: string;
   name: string;
   figure: string;
-  pose: "sitting" | "standing";
-  position: "left" | "center" | "right";
+  gender: "m" | "f" | "n";
+  color: string | null;
+  pose: "sitting" | "standing" | "unwell" | "pointing" | "hands_on_hips";
+  position: "far_left" | "left" | "center" | "right" | "far_right";
   mood: "happy" | "calm" | "worried" | "upset" | "angry" | "scared";
 };
 
 export type NodeVisual = {
   speaker: string | null;
+  background: "standard" | "business" | "vestibule";
   characters: VisualCharacter[];
   props: string[];
 };
@@ -192,8 +199,15 @@ export type AttemptResult = {
   finished_at: string;
   initial: Scales;
   final: Scales;
-  ending: { node_id: string; text: string; summary: string; outcome: string | null };
+  ending: {
+    node_id: string;
+    text: string;
+    summary: string;
+    outcome: string | null;
+    outcome_label: string | null;
+    outcome_tone: string | null;
+  };
   steps: ResultStep[];
   competencies: CompetencyScore[];
-  reward: { score: number; xp_gained: number; best_score: number; achievements: { id: string; title: string }[] } | null;
+  reward: { score: number; xp_gained: number; best_score: number; achievements: { id: string; title: string; icon: string }[] } | null;
 };

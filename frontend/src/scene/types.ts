@@ -1,16 +1,23 @@
 export type Mood = "happy" | "calm" | "worried" | "upset" | "angry" | "scared";
 
+export type Pose = "sitting" | "standing" | "unwell" | "pointing" | "hands_on_hips";
+export type Position = "far_left" | "left" | "center" | "right" | "far_right";
+export type Background = "standard" | "business" | "vestibule";
+
 export type SceneCharacter = {
   id: string;
   name: string;
   figure: string;
-  pose: "sitting" | "standing";
-  position: "left" | "center" | "right";
+  gender: "m" | "f" | "n";
+  color: string | null;
+  pose: Pose;
+  position: Position;
   mood: Mood;
   speaking: boolean;
 };
 
 export type SceneModel = {
+  background: Background;
   characters: SceneCharacter[];
   props: string[];
 };
@@ -24,11 +31,8 @@ const MOOD_WORDS: Record<Mood, { m: string; f: string; n: string }> = {
   scared: { m: "напуган", f: "напугана", n: "напуганы" },
 };
 
-export function moodWord(mood: Mood, figure: string): string {
-  const words = MOOD_WORDS[mood];
-  if (figure === "man") return words.m;
-  if (figure === "woman") return words.f;
-  return words.n;
+export function moodWord(mood: Mood, gender: "m" | "f" | "n"): string {
+  return MOOD_WORDS[mood][gender];
 }
 
 export const MOOD_TONE: Record<Mood, "good" | "neutral" | "warn" | "bad"> = {

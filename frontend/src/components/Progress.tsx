@@ -1,3 +1,4 @@
+import { achievementGlyph } from "../utils/achievements";
 import type { AchievementState, CompetencyScore, Level, Recommendation } from "../api/types";
 import { formatDateTime } from "../utils/time";
 
@@ -95,10 +96,11 @@ export function AchievementGrid({ items }: { items: AchievementState[] }) {
       {items.map((a) => (
         <li key={a.id} className={`achievement ${a.earned ? "is-earned" : "is-locked"}`}>
           <span className="achievement-icon" aria-hidden="true">
-            {a.earned ? "★" : "☆"}
+            {achievementGlyph(a.icon)}
           </span>
           <div>
             <p className="achievement-title">{a.title}</p>
+            {a.scenario_title && <p className="muted small">Сценарий «{a.scenario_title}»</p>}
             <p className="muted small">{a.description}</p>
             <p className="small">{a.earned && a.awarded_at ? `Получено ${formatDateTime(a.awarded_at)}` : "Ещё не получено"}</p>
           </div>

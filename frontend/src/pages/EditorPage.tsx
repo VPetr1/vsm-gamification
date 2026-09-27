@@ -1,3 +1,4 @@
+import { AutoTextarea } from "../components/AutoTextarea";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
@@ -250,7 +251,7 @@ export function EditorPage() {
         </div>
         <label className="field wide">
           <span>Описание</span>
-          <textarea rows={2} value={draft.description} onChange={(e) => change({ ...draft, description: e.target.value })} />
+          <AutoTextarea value={draft.description} onChange={(e) => change({ ...draft, description: e.target.value })} />
         </label>
         {graphErrors.length > 0 && <p className="field-error small">{graphErrors.length} ошибок уровня сценария — см. список выше.</p>}
       </section>

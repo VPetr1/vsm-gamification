@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { AutoTextarea } from "../components/AutoTextarea";
 import { ConditionBuilder } from "./ConditionBuilder";
 import { freeId, ID_PATTERN, type Obj } from "./graphOps";
 import { OutcomeEditor } from "./OutcomeEditor";
+import { OUTCOME_TONES } from "./sceneOptions";
 import { VisualEditor } from "./VisualEditor";
 
 type Props = {
@@ -91,32 +93,67 @@ export function NodeEditor({ nodeId, node, nodeIds, flags, characters, errors, o
 
       <label className="field wide">
         <span>Текст ситуации</span>
-        <textarea rows={3} value={(node.text as string) ?? ""} onChange={(e) => set("text", e.target.value)} />
+        <AutoTextarea minRows={3} value={(node.text as string) ?? ""} onChange={(e) => set("text", e.target.value)} />
       </label>
 
       {isEnding ? (
         <>
           <label className="field wide">
             <span>Итог для разбора</span>
-            <textarea rows={2} value={(node.ending_summary as string) ?? ""} onChange={(e) => set("ending_summary", e.target.value)} />
+            <AutoTextarea value={(node.ending_summary as string) ?? ""} onChange={(e) => set("ending_summary", e.target.value)} />
           </label>
-          <label className="field">
-            <span>Тип финала</span>
-            <select value={(node.outcome as string) ?? ""} onChange={(e) => set("outcome", e.target.value || undefined)}>
-              <option value="">не указан</option>
-              {OUTCOMES.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.title}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="field-row">
+            <label className="field">
+              <span>Тип финала</span>
+              <select
+                value={(node.outcome as string) ?? ""}
+                onChange={(e) => {
+                  const next = { ...node } as Obj;
+                  delete next.outcome_label;
+                  delete next.outcome_tone;
+                  if (e.target.value) next.outcome = e.target.value;
+                  else delete next.outcome;
+                  if (e.target.value === "custom") {
+                    next.outcome_label = "Свой финал";
+                    next.outcome_tone = "neutral";
+                  }
+                  onChange(next);
+                }}
+              >
+                <option value="">не указан</option>
+                {OUTCOMES.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.title}
+                  </option>
+                ))}
+                <option value="custom">Свой…</option>
+              </select>
+            </label>
+            {node.outcome === "custom" && (
+              <>
+                <label className="field">
+                  <span>Название финала</span>
+                  <input maxLength={60} value={(node.outcome_label as string) ?? ""} onChange={(e) => set("outcome_label", e.target.value)} />
+                </label>
+                <label className="field">
+                  <span>Окраска</span>
+                  <select value={(node.outcome_tone as string) ?? "neutral"} onChange={(e) => set("outcome_tone", e.target.value)}>
+                    {OUTCOME_TONES.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+          </div>
         </>
       ) : (
         <>
           <label className="field wide">
             <span>Как лучше поступить (урок для разбора)</span>
-            <textarea rows={2} value={(node.debrief as string) ?? ""} onChange={(e) => set("debrief", e.target.value || undefined)} />
+            <AutoTextarea value={(node.debrief as string) ?? ""} onChange={(e) => set("debrief", e.target.value || undefined)} />
           </label>
 
           <fieldset className="mini-fieldset">
@@ -175,7 +212,7 @@ export function NodeEditor({ nodeId, node, nodeIds, flags, characters, errors, o
                     </label>
                     <label className="field wide">
                       <span>Текст кнопки</span>
-                      <input value={(choice.text as string) ?? ""} onChange={(e) => replace({ ...choice, text: e.target.value })} />
+                      <AutoTextarea minRows={1} value={(choice.text as string) ?? ""} onChange={(e) => replace({ ...choice, text: e.target.value })} />
                     </label>
                   </div>
                   <div className="small">

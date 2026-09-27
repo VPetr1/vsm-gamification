@@ -1,3 +1,4 @@
+import { AutoTextarea } from "../components/AutoTextarea";
 import { useId, useState } from "react";
 import { conditionToForm, formToCondition, SCALE_OPS, type Clause, type ConditionForm, type Json, type Obj } from "./graphOps";
 
@@ -23,9 +24,9 @@ export function ConditionBuilder({ value, flags, onChange, emptyLabel = "Без 
         <label htmlFor={`${id}-raw`} className="small">
           Сложное условие (JSON)
         </label>
-        <textarea
+        <AutoTextarea
           id={`${id}-raw`}
-          rows={4}
+          minRows={4}
           value={raw}
           onChange={(e) => {
             setRaw(e.target.value);

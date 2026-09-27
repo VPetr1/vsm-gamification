@@ -51,3 +51,30 @@ def test_medic_appears_only_after_the_announcement(run):
     _, go = run
     assert go("approach", "call_senior", "stay_calm")["node"]["node_id"] == "medic"
     assert go("approach", "own_meds", "stay_calm")["node"]["node_id"] == "station"
+
+
+def _cast(state):
+    return {c["id"]: c["pose"] for c in state["node"]["visual"]["characters"]}
+
+
+def test_scene_shows_who_arrives_and_how_the_passenger_feels(run):
+    _, go = run
+    assert _cast(go()) == {"patient": "unwell", "neighbor": "pointing"}
+    care = go("approach", "call_senior")
+    assert set(_cast(care)) == {"patient", "neighbor", "chief"}
+    assert "first_aid_kit" in care["node"]["visual"]["props"]
+    assert "chief" not in _cast(go("approach", "own_meds"))
+    medic = go("approach", "call_senior", "stay_calm")
+    assert medic["node"]["node_id"] == "medic"
+    assert {"medic", "chief"} <= set(_cast(medic))
+    assert _cast(go("approach", "call_senior", "stay_calm", "assist", "prepare_exit"))["patient"] == "sitting"
+
+
+def test_calm_carriage_achievement_and_complication_badge(run):
+    player, go = run
+    good = go("approach", "call_senior", "stay_calm", "assist", "prepare_exit")
+    titles = {a["title"] for a in player.get(f"/attempts/{good['attempt_id']}/result").json()["reward"]["achievements"]}
+    assert "Спокойный вагон" in titles
+    bad = go("approach", "own_meds", "stay_calm", "prepare_exit")
+    ending = player.get(f"/attempts/{bad['attempt_id']}/result").json()["ending"]
+    assert (ending["outcome_label"], ending["outcome_tone"]) == ("Осложнение", "bad")

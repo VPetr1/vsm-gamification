@@ -6,7 +6,8 @@ import type { AttemptResult } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorState, Loading } from "../components/States";
 import { CompetencyList } from "../components/Progress";
-import { OUTCOME_LABEL } from "../utils/labels";
+import { achievementGlyph } from "../utils/achievements";
+import { outcomeLabel, outcomeTone } from "../utils/labels";
 import { formatDateTime, signed } from "../utils/time";
 
 
@@ -59,8 +60,8 @@ export function ResultPage() {
         <h1>Разбор рейса</h1>
       </header>
 
-      <section className={`card ending-card outcome-${result.ending.outcome ?? "none"}`}>
-        {result.ending.outcome && <span className="badge">{OUTCOME_LABEL[result.ending.outcome] ?? result.ending.outcome}</span>}
+      <section className={`card ending-card tone-${outcomeTone(result.ending)}`}>
+        {outcomeLabel(result.ending) && <span className="badge">{outcomeLabel(result.ending)}</span>}
         <p className="ending-text">{result.ending.text}</p>
         <p>{result.ending.summary}</p>
         <div className="finals">
@@ -97,14 +98,14 @@ export function ResultPage() {
             </div>
           </div>
           <p className="muted small">
-            Результат — среднее двух шкал на финале. Опыт начисляется только за улучшение лучшего результата в этом
-            сценарии.
+            Результат — среднее двух шкал на финале относительно лучшего и худшего возможного исхода сценария:
+            идеальное прохождение даёт 100. Опыт начисляется только за улучшение лучшего результата в этом сценарии.
           </p>
           {result.reward.achievements.length > 0 && (
             <div className="chips">
               {result.reward.achievements.map((a) => (
                 <span key={a.id} className="chip chip-good">
-                  ★ {a.title}
+                  {achievementGlyph(a.icon)} {a.title}
                 </span>
               ))}
             </div>

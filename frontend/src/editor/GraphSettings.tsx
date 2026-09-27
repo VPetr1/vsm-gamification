@@ -1,6 +1,24 @@
 import { useState } from "react";
 import { ConditionBuilder } from "./ConditionBuilder";
-import { ID_PATTERN, type Obj } from "./graphOps";
+import { AutoTextarea } from "../components/AutoTextarea";
+import { ACHIEVEMENT_ICONS } from "../utils/achievements";
+import { freeId, ID_PATTERN, type Obj } from "./graphOps";
+import { BACKGROUNDS, COLORS, FIGURES, GENDERS, POSES, POSITIONS, type Option } from "./sceneOptions";
+
+type Patch = { [key: string]: Obj[string] | undefined };
+
+function Select({ label, value, options, onChange, empty }: { label: string; value: string; options: Option[]; onChange: (v: string) => void; empty?: string }) {
+  return (
+    <select aria-label={label} title={label} value={value} onChange={(e) => onChange(e.target.value)}>
+      {empty !== undefined && <option value="">{empty}</option>}
+      {options.map((o) => (
+        <option key={o.id} value={o.id}>
+          {o.title}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 const ACHIEVEMENTS = [
   { id: "diplomat", title: "Дипломат" },
@@ -15,7 +33,9 @@ export function GraphSettings({ graph, onChange }: Props) {
   const initial = (graph.initial as Obj) ?? {};
   const flags = (graph.flags as Obj) ?? {};
   const awards = (graph.awards as Obj[] | undefined) ?? [];
-  const characters = ((graph.visual as Obj | undefined)?.characters as Obj | undefined) ?? {};
+  const custom = (graph.achievements as Obj[] | undefined) ?? [];
+  const graphVisual = (graph.visual as Obj | undefined) ?? {};
+  const characters = (graphVisual.characters as Obj | undefined) ?? {};
   const nodeIds = Object.keys((graph.nodes as Obj) ?? {});
   const flagNames = Object.keys(flags);
 
@@ -25,7 +45,14 @@ export function GraphSettings({ graph, onChange }: Props) {
     else next[key] = value;
     onChange(next);
   };
-  const setCharacters = (next: Obj) => set("visual", Object.keys(next).length ? { ...((graph.visual as Obj) ?? {}), characters: next } : undefined);
+  const setVisual = (patch: Patch) => {
+    const next = Object.fromEntries(
+      Object.entries({ ...graphVisual, ...patch }).filter(([, v]) => v !== undefined && v !== "" && !(typeof v === "object" && v !== null && Object.keys(v).length === 0)),
+    ) as Obj;
+    set("visual", Object.keys(next).length ? next : undefined);
+  };
+  const setCharacters = (next: Obj) => setVisual({ characters: next });
+  const setCustom = (next: Obj[]) => set("achievements", next.length ? next : undefined);
 
   return (
     <details className="card graph-settings" open>
@@ -140,28 +167,88 @@ export function GraphSettings({ graph, onChange }: Props) {
       </fieldset>
 
       <fieldset className="mini-fieldset">
+        <legend>Свои достижения</legend>
+        <p className="muted small">Придумайте достижение для этого сценария: название, описание, значок и условие на итоговое состояние.</p>
+        {custom.map((a, i) => {
+          const replace = (patch: Obj) => setCustom(custom.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+          return (
+            <div key={i} className="clause-block custom-achievement">
+              <div className="inline wrap">
+                <select aria-label="Значок" value={(a.icon as string) ?? "medal"} onChange={(e) => replace({ icon: e.target.value })}>
+                  {ACHIEVEMENT_ICONS.map((icon) => (
+                    <option key={icon.id} value={icon.id}>
+                      {icon.glyph} {icon.title}
+                    </option>
+                  ))}
+                </select>
+                <input aria-label="Название достижения" placeholder="Название" value={(a.title as string) ?? ""} onChange={(e) => replace({ title: e.target.value })} />
+                <code className="small">{a.id as string}</code>
+              </div>
+              <AutoTextarea
+                aria-label="Описание достижения"
+                placeholder="За что выдаётся"
+                minRows={1}
+                value={(a.description as string) ?? ""}
+                onChange={(e) => replace({ description: e.target.value })}
+              />
+              <ConditionBuilder
+                value={a.when}
+                flags={flagNames}
+                emptyLabel="Добавьте условие"
+                onChange={(when) => replace({ when: when ?? {} })}
+              />
+              <button type="button" className="btn btn-ghost small" onClick={() => setCustom(custom.filter((_, j) => j !== i))}>
+                Удалить
+              </button>
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          className="btn btn-ghost small"
+          onClick={() =>
+            setCustom([
+              ...custom,
+              {
+                id: freeId(custom.map((a) => a.id as string), "achievement"),
+                title: "Новое достижение",
+                description: "",
+                icon: "star",
+                when: { scale: "loyalty", op: ">=", value: 70 },
+              },
+            ])
+          }
+        >
+          + своё достижение
+        </button>
+      </fieldset>
+
+      <fieldset className="mini-fieldset">
+        <legend>Сцена</legend>
+        <label className="small inline">
+          Фон по умолчанию
+          <Select label="Фон" value={(graphVisual.background as string) ?? ""} options={BACKGROUNDS} empty="стандартный" onChange={(v) => setVisual({ background: v || undefined })} />
+        </label>
+      </fieldset>
+
+      <fieldset className="mini-fieldset">
         <legend>Персонажи сцены</legend>
         {Object.entries(characters).map(([id, raw]) => {
           const c = raw as Obj;
-          const replace = (patch: Obj) => setCharacters({ ...characters, [id]: { ...c, ...patch } });
+          const replace = (patch: Patch) =>
+            setCharacters({
+              ...characters,
+              [id]: Object.fromEntries(Object.entries({ ...c, ...patch }).filter(([, v]) => v !== undefined)) as Obj,
+            });
           return (
             <div key={id} className="clause-block">
               <code>{id}</code>
               <input aria-label="Имя" value={(c.name as string) ?? ""} onChange={(e) => replace({ name: e.target.value })} />
-              <select aria-label="Фигура" value={(c.figure as string) ?? "passenger"} onChange={(e) => replace({ figure: e.target.value })}>
-                <option value="man">мужчина</option>
-                <option value="woman">женщина</option>
-                <option value="passenger">пассажир</option>
-              </select>
-              <select aria-label="Поза" value={(c.pose as string) ?? "standing"} onChange={(e) => replace({ pose: e.target.value })}>
-                <option value="standing">стоит</option>
-                <option value="sitting">сидит</option>
-              </select>
-              <select aria-label="Место" value={(c.position as string) ?? "center"} onChange={(e) => replace({ position: e.target.value })}>
-                <option value="left">слева</option>
-                <option value="center">в центре</option>
-                <option value="right">справа</option>
-              </select>
+              <Select label="Роль" value={(c.figure as string) ?? "passenger"} options={FIGURES} onChange={(v) => replace({ figure: v })} />
+              <Select label="Род (для подписи настроения)" value={(c.gender as string) ?? ""} options={GENDERS} empty="по роли" onChange={(v) => replace({ gender: v || undefined })} />
+              <Select label="Цвет одежды" value={(c.color as string) ?? ""} options={COLORS} empty="цвет роли" onChange={(v) => replace({ color: v || undefined })} />
+              <Select label="Поза" value={(c.pose as string) ?? "standing"} options={POSES} onChange={(v) => replace({ pose: v })} />
+              <Select label="Место" value={(c.position as string) ?? "center"} options={POSITIONS} onChange={(v) => replace({ position: v })} />
               <button
                 type="button"
                 className="btn btn-ghost small"

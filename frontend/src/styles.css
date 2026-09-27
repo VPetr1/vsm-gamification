@@ -791,11 +791,11 @@ a {
   border-left: 6px solid var(--teal);
 }
 
-.ending-card.outcome-resolved_with_dissatisfaction {
+.ending-card.tone-neutral {
   border-left-color: var(--amber);
 }
 
-.ending-card.outcome-escalated_to_senior {
+.ending-card.tone-bad {
   border-left-color: var(--navy);
 }
 
@@ -1611,4 +1611,26 @@ a {
   .main-nav a {
     padding: 8px 10px;
   }
+}
+
+/* Editor: scenario achievements and multi-line fields */
+.custom-achievement {
+  display: grid;
+  gap: 8px;
+}
+
+.inline.wrap {
+  flex-wrap: wrap;
+}
+
+.choice-editor textarea,
+.node-editor textarea,
+.graph-settings textarea {
+  width: 100%;
+  line-height: 1.4;
+}
+
+.achievement.is-locked .achievement-icon {
+  filter: grayscale(1);
+  opacity: 0.45;
 }

@@ -1,19 +1,6 @@
 import { ConditionBuilder } from "./ConditionBuilder";
 import type { Obj } from "./graphOps";
-
-const MOODS = [
-  { id: "happy", title: "доволен" },
-  { id: "calm", title: "спокоен" },
-  { id: "worried", title: "встревожен" },
-  { id: "scared", title: "напуган" },
-  { id: "upset", title: "расстроен" },
-  { id: "angry", title: "раздражён" },
-];
-
-const PROPS = [
-  { id: "suitcase", title: "чемодан в проходе" },
-  { id: "spill", title: "пролитый напиток" },
-];
+import { BACKGROUNDS, MOODS, POSES, POSITIONS, PROPS } from "./sceneOptions";
 
 type Props = {
   node: Obj;
@@ -27,6 +14,7 @@ export function VisualEditor({ node, characters, flags, onChange }: Props) {
   const visual = (node.visual as Obj | undefined) ?? {};
   const moods = (visual.moods as Obj[] | undefined) ?? [];
   const props = (visual.props as Obj[] | undefined) ?? [];
+  const cast = visual.cast as Obj[] | undefined;
 
   const setVisual = (next: Obj) => {
     const cleaned = Object.fromEntries(
@@ -53,6 +41,88 @@ export function VisualEditor({ node, characters, flags, onChange }: Props) {
           ))}
         </select>
       </label>
+
+      <label className="small inline">
+        Фон
+        <select value={(visual.background as string) ?? ""} onChange={(e) => setVisual({ ...visual, background: e.target.value || undefined } as Obj)}>
+          <option value="">как в сценарии</option>
+          {BACKGROUNDS.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.title}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <fieldset className="mini-fieldset">
+        <legend>Кто в кадре</legend>
+        <label className="small inline">
+          <input
+            type="checkbox"
+            checked={cast !== undefined}
+            onChange={(e) => {
+              const next = { ...visual };
+              if (e.target.checked) next.cast = characters.map((c) => ({ character: c }));
+              else delete next.cast;
+              setVisual(next);
+            }}
+          />
+          Выбрать персонажей для этого узла (иначе в кадре все)
+        </label>
+        {cast?.map((rule, i) => {
+          const replace = (patch: Obj) => {
+            const next = { ...rule, ...patch };
+            for (const key of Object.keys(patch)) if (patch[key] === "") delete next[key];
+            setVisual({ ...visual, cast: cast.map((x, j) => (j === i ? next : x)) });
+          };
+          return (
+            <div key={i} className="clause-block">
+              <select aria-label="Персонаж в кадре" value={(rule.character as string) ?? ""} onChange={(e) => replace({ character: e.target.value })}>
+                {characters.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <select aria-label="Поза в узле" value={(rule.pose as string) ?? ""} onChange={(e) => replace({ pose: e.target.value })}>
+                <option value="">поза по умолчанию</option>
+                {POSES.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.title}
+                  </option>
+                ))}
+              </select>
+              <select aria-label="Место в узле" value={(rule.position as string) ?? ""} onChange={(e) => replace({ position: e.target.value })}>
+                <option value="">место по умолчанию</option>
+                {POSITIONS.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.title}
+                  </option>
+                ))}
+              </select>
+              <ConditionBuilder
+                value={rule.when}
+                flags={flags}
+                emptyLabel="всегда"
+                onChange={(when) => {
+                  const next = { ...rule };
+                  if (when === undefined) delete next.when;
+                  else next.when = when;
+                  setVisual({ ...visual, cast: cast.map((x, j) => (j === i ? next : x)) });
+                }}
+              />
+              <button type="button" className="btn btn-ghost small" onClick={() => setVisual({ ...visual, cast: cast.filter((_, j) => j !== i) })}>
+                Убрать
+              </button>
+            </div>
+          );
+        })}
+        {cast !== undefined && characters.length > 0 && (
+          <button type="button" className="btn btn-ghost small" onClick={() => setVisual({ ...visual, cast: [...cast, { character: characters[0] }] })}>
+            + персонаж в кадр
+          </button>
+        )}
+      </fieldset>
 
       <fieldset className="mini-fieldset">
         <legend>Настроение персонажей</legend>

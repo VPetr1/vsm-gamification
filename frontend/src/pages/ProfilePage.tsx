@@ -4,7 +4,7 @@ import { AchievementGrid, CompetencyList, LevelBar, RecommendationCard } from ".
 import { Empty, ErrorState, Loading } from "../components/States";
 import { useApi } from "../hooks/useApi";
 import { useStartScenario } from "../hooks/useStartScenario";
-import { OUTCOME_LABEL } from "../utils/labels";
+import { outcomeLabel } from "../utils/labels";
 import { formatDateTime } from "../utils/time";
 
 export function ProfilePage() {
@@ -90,7 +90,7 @@ export function ProfilePage() {
                         <Link to={`/attempts/${h.attempt_id}`}>Продолжить</Link>
                       ) : (
                         <Link to={`/attempts/${h.attempt_id}/result`}>
-                          {h.outcome ? OUTCOME_LABEL[h.outcome] ?? h.outcome : "Разбор"}
+                          {outcomeLabel(h) ?? "Разбор"}
                         </Link>
                       )}
                     </td>

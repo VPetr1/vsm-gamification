@@ -1,3 +1,4 @@
+import { AutoTextarea } from "../components/AutoTextarea";
 import { ConditionBuilder } from "./ConditionBuilder";
 import type { Json, Obj } from "./graphOps";
 
@@ -122,8 +123,7 @@ export function OutcomeEditor({ outcome, nodeIds, flags, onChange }: Props) {
 
       <label className="small block">
         Объяснение для разбора
-        <textarea
-          rows={2}
+        <AutoTextarea
           value={(outcome.explanation as string) ?? ""}
           onChange={(e) => onChange(withKey(outcome, "explanation", e.target.value || undefined))}
         />

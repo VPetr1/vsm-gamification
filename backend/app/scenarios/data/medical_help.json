@@ -20,10 +20,12 @@
       "panic_spread": false
     },
     "visual": {
+      "background": "standard",
       "characters": {
         "patient": {
           "name": "Пассажир у окна",
           "figure": "man",
+          "color": "grey",
           "pose": "sitting",
           "position": "left"
         },
@@ -32,6 +34,20 @@
           "figure": "woman",
           "pose": "sitting",
           "position": "center"
+        },
+        "chief": {
+          "name": "Начальник поезда",
+          "figure": "chief",
+          "gender": "m",
+          "pose": "standing",
+          "position": "far_right"
+        },
+        "medic": {
+          "name": "Медсестра",
+          "figure": "medic",
+          "gender": "f",
+          "pose": "standing",
+          "position": "right"
         }
       }
     },
@@ -50,6 +66,16 @@
             {
               "character": "neighbor",
               "mood": "worried"
+            }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor",
+              "pose": "pointing"
             }
           ]
         },
@@ -136,6 +162,15 @@
               "character": "neighbor",
               "mood": "worried"
             }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor"
+            }
           ]
         },
         "choices": [
@@ -200,6 +235,22 @@
               "character": "neighbor",
               "mood": "scared"
             }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor",
+              "pose": "standing",
+              "position": "center"
+            }
+          ],
+          "props": [
+            {
+              "id": "water"
+            }
           ]
         },
         "choices": [
@@ -251,6 +302,29 @@
             {
               "character": "neighbor",
               "mood": "worried"
+            }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor"
+            },
+            {
+              "character": "chief",
+              "when": {
+                "flag": "senior_called"
+              }
+            }
+          ],
+          "props": [
+            {
+              "id": "first_aid_kit",
+              "when": {
+                "flag": "senior_called"
+              }
             }
           ]
         },
@@ -344,6 +418,32 @@
               "character": "neighbor",
               "mood": "calm"
             }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor"
+            },
+            {
+              "character": "medic"
+            },
+            {
+              "character": "chief",
+              "when": {
+                "flag": "senior_called"
+              }
+            }
+          ],
+          "props": [
+            {
+              "id": "first_aid_kit",
+              "when": {
+                "flag": "senior_called"
+              }
+            }
           ]
         },
         "choices": [
@@ -397,6 +497,29 @@
             {
               "character": "neighbor",
               "mood": "calm"
+            }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "when": {
+                "not": {
+                  "flag": "gave_own_meds"
+                }
+              }
+            },
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor"
+            },
+            {
+              "character": "chief",
+              "when": {
+                "flag": "senior_called"
+              }
             }
           ]
         },
@@ -507,6 +630,17 @@
               "character": "neighbor",
               "mood": "happy"
             }
+          ],
+          "cast": [
+            {
+              "character": "patient"
+            },
+            {
+              "character": "neighbor"
+            },
+            {
+              "character": "chief"
+            }
           ]
         }
       },
@@ -525,13 +659,25 @@
               "character": "neighbor",
               "mood": "upset"
             }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor"
+            },
+            {
+              "character": "chief"
+            }
           ]
         }
       },
       "end_complication": {
         "text": "После таблетки из чужой аптечки пассажиру стало хуже. Начальник поезда фиксирует происшествие, медики на станции оказывают помощь.",
         "is_ending": true,
-        "outcome": "escalated_to_senior",
+        "outcome": "custom",
         "ending_summary": "Главная ошибка — личное лекарство. Даже при последующих правильных действиях ситуацию пришлось передавать начальнику поезда и медикам как осложнение.",
         "visual": {
           "moods": [
@@ -543,9 +689,55 @@
               "character": "neighbor",
               "mood": "scared"
             }
+          ],
+          "cast": [
+            {
+              "character": "patient",
+              "pose": "unwell"
+            },
+            {
+              "character": "neighbor"
+            },
+            {
+              "character": "chief"
+            }
+          ],
+          "props": [
+            {
+              "id": "first_aid_kit"
+            }
+          ]
+        },
+        "outcome_label": "Осложнение",
+        "outcome_tone": "bad"
+      }
+    },
+    "achievements": [
+      {
+        "id": "calm_carriage",
+        "title": "Спокойный вагон",
+        "description": "Помогите пассажиру так, чтобы в вагоне не началась паника, он не оставался один и не получил чужих лекарств.",
+        "icon": "heart",
+        "when": {
+          "all": [
+            {
+              "not": {
+                "flag": "panic_spread"
+              }
+            },
+            {
+              "not": {
+                "flag": "left_alone"
+              }
+            },
+            {
+              "not": {
+                "flag": "gave_own_meds"
+              }
+            }
           ]
         }
       }
-    }
+    ]
   }
 }
